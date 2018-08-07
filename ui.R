@@ -1,3 +1,3 @@
-fluidPage(
+bootstrapPage(
   home_UI('app')
 )
