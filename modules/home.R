@@ -1,20 +1,54 @@
 home_UI <- function(id) {
   ns <- NS(id) 
   
-  htmlTemplate("templates/home.html", 
-               analyte_selector_ui = selectInput(ns("analyte_input"), "Analyte", 
-                                                 choices = 1:10), 
-               analyte_qualities_ui_output = uiOutput(ns("analyte_qualities_ui")))
+  # htmlTemplate("templates/home.html", 
+  #              analyte_selector_ui = selectInput(ns("analyte_input"), "Analyte", 
+  #                                                choices = 1:10), 
+  #              analyte_qualities_ui_output = uiOutput(ns("analyte_qualities_ui")))
+  tagList(
+    fluidRow(
+      column(width = 12,
+             tags$h1('Clear Lake Water Quality'))
+    ),
+    fluidRow(
+      column(width = 12, class = 'col-md-6',
+             uiOutput(ns('select_analyte')),
+             uiOutput(ns('select_depth')),
+             plotlyOutput(ns('analyte_plot'))),
+      column(width = 12, class = 'col-md-6',
+             leafletOutput(ns('sites_map')))
+    )
+  )
+  
 }
 
 home_server <- function(input, output, session) {
   
   ns <- session$ns
   
-  output$analyte_qualities_ui <- renderUI({
-    tagList(
-      selectInput(ns("in1"), "fda", choices = letters),
-      selectInput(ns("in2"), "fda", choices = LETTERS)
-    )
+  # output$analyte_qualities_ui <- renderUI({
+  #   tagList(
+  #     selectInput(ns("in1"), "fda", choices = letters),
+  #     selectInput(ns("in2"), "fda", choices = LETTERS)
+  #   )
+  # })
+  output$select_analyte <- renderUI({
+    selectInput('selected_analyte', label = 'Select Analyte',
+                choices = c("pH", "Dissolved Oxygen"))
   })
+  
+  output$select_depth <- renderUI({
+    selectInput('selected_depth', label = 'Select Depth', choices = 1:4)
+  })
+  
+  output$analyte_plot <- renderPlotly(
+    mtcars %>% 
+      plot_ly(x = ~mpg, y = ~cyl)
+  )
+  
+  output$sites_map <- renderLeaflet(
+    leaflet() %>% 
+      addTiles() %>% 
+      setView(lng=-122.767084, lat=39.028363, zoom = 11)
+  )
 }
