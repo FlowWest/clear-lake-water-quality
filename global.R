@@ -2,6 +2,7 @@ library(shiny)
 library(tidyverse)
 library(plotly)
 library(leaflet)
+library(shinythemes)
 
 source("modules/home.R")
 
