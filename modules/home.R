@@ -8,15 +8,29 @@ home_UI <- function(id) {
   tagList(
     fluidRow(
       column(width = 12,
-             tags$h1('Clear Lake Water Quality'))
+             tags$header(class = 'title',
+               tags$img(src = 'big_valley_rancheria.png'),
+               tags$h1('Clear Lake Water Quality'))
+             )
     ),
     fluidRow(
       column(width = 12, class = 'col-md-6',
-             uiOutput(ns('select_analyte')),
-             uiOutput(ns('select_depth')),
-             plotlyOutput(ns('analyte_plot'))),
+             tags$section(class = 'app-controls',
+               uiOutput(ns('select_analyte')),
+               uiOutput(ns('select_depth'))
+             ),
+             plotlyOutput(ns('analyte_plot')),
+             uiOutput(ns('analyte_description'))),
       column(width = 12, class = 'col-md-6',
-             leafletOutput(ns('sites_map')))
+             leafletOutput(ns('sites_map')),
+             tags$h2('Clear Lake Elevation'), 
+             plotlyOutput(ns('lake_elev_plot'), height = '200px'))
+    ),
+    fluidRow(
+      column(width = 12,
+             tags$img(src = 'TransLogoTreb.png', width = '200px'),
+             tags$p('App developed and maintained by', 
+                    tags$a('Emanuel Rodriguez', href = 'mailto:erodriguez@flowwest.com', target = '_blank')))
     )
   )
   
@@ -46,9 +60,18 @@ home_server <- function(input, output, session) {
       plot_ly(x = ~mpg, y = ~cyl)
   )
   
+  output$analyte_description <- renderUI({
+    tags$p('A description of the analyte')
+  })
+  
   output$sites_map <- renderLeaflet(
     leaflet() %>% 
       addTiles() %>% 
       setView(lng=-122.767084, lat=39.028363, zoom = 11)
+  )
+  
+  output$lake_elev_plot <- renderPlotly(
+    mtcars %>% 
+      plot_ly(x = ~disp, y = ~qsec, type = 'scatter', mode = 'lines')
   )
 }
