@@ -22,6 +22,12 @@ home_UI <- function(id) {
              leafletOutput(ns('sites_map')),
              tags$h2('Clear Lake Elevation'), 
              plotlyOutput(ns('lake_elev_plot'), height = '200px'))
+    ),
+    fluidRow(
+      column(width = 12,
+             tags$img(src = 'TransLogoTreb.png', width = '20%'),
+             tags$p('App developed and maintained by', 
+                    tags$a('Emanuel Rodriguez', href = 'mailto:erodriguez@flowwest.com', target = '_blank')))
     )
   )
   
