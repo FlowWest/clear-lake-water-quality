@@ -1,10 +1,6 @@
 home_UI <- function(id) {
   ns <- NS(id) 
-  
-  # htmlTemplate("templates/home.html", 
-  #              analyte_selector_ui = selectInput(ns("analyte_input"), "Analyte", 
-  #                                                choices = 1:10), 
-  #              analyte_qualities_ui_output = uiOutput(ns("analyte_qualities_ui")))
+
   tagList(
     fluidRow(
       column(width = 12,
@@ -16,7 +12,11 @@ home_UI <- function(id) {
     fluidRow(
       column(width = 12, class = 'col-md-6',
              tags$section(class = 'app-controls',
-               uiOutput(ns('select_analyte')),
+                          tags$div(style="display:inline-block",
+                                   selectInput(ns("analyte_selected"), label="Select Analyte", 
+                                               choices = analyte_choices, selectize = TRUE)),
+                          tags$div(style="display:inline-block",
+                                   uiOutput(ns('select_property_ui'))),
                uiOutput(ns('select_depth'))
              ),
              plotlyOutput(ns('analyte_plot')),
@@ -37,18 +37,20 @@ home_UI <- function(id) {
 }
 
 home_server <- function(input, output, session) {
-  
   ns <- session$ns
   
-  # output$analyte_qualities_ui <- renderUI({
-  #   tagList(
-  #     selectInput(ns("in1"), "fda", choices = letters),
-  #     selectInput(ns("in2"), "fda", choices = LETTERS)
-  #   )
-  # })
-  output$select_analyte <- renderUI({
-    selectInput('selected_analyte', label = 'Select Analyte',
-                choices = c("pH", "Dissolved Oxygen"))
+  analyte_has_property <- reactive({
+    wq_data %>% 
+      filter(analyte_name == input$analyte_selected) %>% 
+      pull(analyte_quality)
+  })
+  
+  output$select_property_ui <- renderUI({
+    req(input$analyte_selected)
+    if (is.na(analyte_has_property())) return(NULL)
+    
+    selectInput(ns("analyte_property_selected"), label = "Select Property", 
+                choices = analyte_has_property(), selected = analyte_has_property()[1])
   })
   
   output$select_depth <- renderUI({
@@ -67,6 +69,11 @@ home_server <- function(input, output, session) {
   output$sites_map <- renderLeaflet(
     leaflet() %>% 
       addTiles() %>% 
+      addCircleMarkers(data=ceden_stations, label=~station_name, 
+                       popup=~paste0("<b>", station_name, "</b><br>", 
+                                     "<em>Station Code:&emsp;", station_code, "</em><br>", 
+                                     "<em>Parent Project:&emsp;", parent_project, "</em><br>",
+                                     "<button>Plot Series</button>")) %>% 
       setView(lng=-122.767084, lat=39.028363, zoom = 11)
   )
   

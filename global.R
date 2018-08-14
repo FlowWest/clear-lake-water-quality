@@ -6,7 +6,7 @@ library(shinythemes)
 
 source("modules/home.R")
 
-wq_data <- read_rds('data/test-data.rds')
-glimpse(wq_data)
-wq_data$analyte_name %>% unique
-wq_data$analyte_property %>% unique
+ceden_wq <- read_rds('data/ceden_data.rds')
+ceden_stations <- read_rds('data/ceden_stations.rds')
+
+analyte_choices <- ceden_wq %>% distinct(analyte_name) %>% pull()
