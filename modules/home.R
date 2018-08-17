@@ -6,7 +6,7 @@ home_UI <- function(id) {
       column(width = 12,
              tags$header(class = 'title',
                          tags$img(src = 'big_valley_rancheria.png'),
-                         tags$h1('Clear Lake Water Quality'))
+                         tags$h1('Clear Lake Water Quality', style="display:inline-block"))
       )
     ),
     fluidRow(
@@ -15,6 +15,8 @@ home_UI <- function(id) {
                           tags$div(style="display:inline-block",
                                    selectInput(ns("analyte_selected"), label="Select Analyte", 
                                                choices = analyte_choices, selectize = TRUE)),
+                          tags$div(style="display:inline-block",
+                                   uiOutput(ns('select_sampling_ui'))),
                           tags$div(style="display:inline-block",
                                    uiOutput(ns('select_property_ui'))),
                           uiOutput(ns('select_depth'))
@@ -51,6 +53,14 @@ home_server <- function(input, output, session) {
                 choices = d[!is.na(d)])
   })
   
+  output$select_sampling_ui <- renderUI({
+    d <- wq_data %>% filter(analyte_name == input$analyte_selected) %>% 
+      distinct(sample_method) %>% pull()
+    selectInput(ns("sampling_method_selected"), label = "Sample Method", 
+                choices = d[!is.na(d)])
+  })
+  
+  
   output$select_depth <- renderUI({
     selectInput('selected_depth', label = 'Select Depth', choices = 1:4)
   })
@@ -60,10 +70,11 @@ home_server <- function(input, output, session) {
     d1 <- wq_data %>% 
       filter(analyte_name == input$analyte_selected)
     
-    if (all(is.na(d1$analyte_quality))) return(d1) 
+    if (all(is.na(d1$analyte_quality))) return(d1 %>% filter(sample_method == input$sampling_method_selected)) 
     
     d1 %>% 
-      filter(analyte_quality == input$analyte_property_selected)
+      filter(analyte_quality == input$analyte_property_selected, 
+             sample_method == input$sampling_method_selected)
     
   })
   
@@ -104,7 +115,8 @@ home_server <- function(input, output, session) {
   )
   
   output$lake_elev_plot <- renderDygraph(
-      dygraph(xts(x=clear_lake_wse$wse_ft, order.by = clear_lake_wse$date)) %>% 
-        dyRangeSelector(dateWindow = c(as.Date("1990-01-01"), Sys.Date()))
+      dygraph(xts(x=clear_lake_wse$wse_ft, order.by = clear_lake_wse$date)) %>%
+        dySeries("V1", label = "WSE (ft)") %>% 
+        dyRangeSelector(dateWindow = c(as.Date("1990-01-01"), Sys.Date())) 
   )
 }
