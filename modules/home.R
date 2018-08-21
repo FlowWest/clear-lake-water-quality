@@ -54,6 +54,9 @@ home_server <- function(input, output, session) {
                 width = 160)
   })
   
+  # @question: should this ui even render when there is not sample method
+  #             to choose from? Currently it does render but just has a 
+  #             default choice of "None" -emanuel
   output$select_sampling_ui <- renderUI({
     d <- wq_data %>% filter(analyte_name == input$analyte_selected) %>% 
       distinct(sample_method) %>% pull()
@@ -63,10 +66,11 @@ home_server <- function(input, output, session) {
                 width = 160)
   })
   
-  
-  output$select_depth <- renderUI({
-    selectInput('selected_depth', label = 'Select Depth', choices = 1:4)
-  })
+  # @note: not using this right now, not even sure what it means
+  #         but its in the tablaeu app so... -emanuel
+  # output$select_depth <- renderUI({
+  #   selectInput('selected_depth', label = 'Select Depth', choices = 1:4)
+  # })
   
   
   selected_analyte_data <- reactive({
