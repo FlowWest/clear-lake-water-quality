@@ -8,7 +8,7 @@ library(xts)
 
 source("modules/home.R")
 
-ceden_wq <- read_rds('data/ceden_data.rds')
+ceden_wq <- read_rds('data/cdfa_analyte_data.rds')
 ceden_stations <- read_rds('data/ceden_stations.rds')
 clear_lake_wse <- read_rds("data/clear-lake-wse.rds")
 

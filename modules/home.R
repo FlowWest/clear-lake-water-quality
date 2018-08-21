@@ -50,14 +50,17 @@ home_server <- function(input, output, session) {
     if (length(d) == 1 && is.na(d)) return(NULL)
     
     selectInput(ns("analyte_property_selected"), label = "Sample Fraction", 
-                choices = d[!is.na(d)])
+                choices = d[!is.na(d)], 
+                width = 160)
   })
   
   output$select_sampling_ui <- renderUI({
     d <- wq_data %>% filter(analyte_name == input$analyte_selected) %>% 
       distinct(sample_method) %>% pull()
+    choices <- ifelse(length(d[!is.na(d)]), d[!is.na(d)], "None")
     selectInput(ns("sampling_method_selected"), label = "Sample Method", 
-                choices = d[!is.na(d)])
+                choices = choices,
+                width = 160)
   })
   
   
@@ -70,11 +73,21 @@ home_server <- function(input, output, session) {
     d1 <- wq_data %>% 
       filter(analyte_name == input$analyte_selected)
     
-    if (all(is.na(d1$analyte_quality))) return(d1 %>% filter(sample_method == input$sampling_method_selected)) 
-    
-    d1 %>% 
-      filter(analyte_quality == input$analyte_property_selected, 
-             sample_method == input$sampling_method_selected)
+    if(all(is.na(d1$sampling_method))) {
+      if (all(is.na(d1$analyte_quality))) {
+        return(d1)
+      } else {
+        return(filter(d1, analyte_quality == input$analyte_property_selected))
+      }
+    } else {
+      if (all(is.na(d1$analyte_quality))) {
+        return(filter(d1, sampling_method == input$sampling_method_selected))
+      } else {
+        return(filter(d1, sampling_method == input$sampling_method_selected, 
+                      analyte_quality == input$analyte_property_selected))
+        
+      }
+    }
     
   })
   
