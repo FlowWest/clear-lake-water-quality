@@ -60,7 +60,13 @@ home_server <- function(input, output, session) {
   output$select_sampling_ui <- renderUI({
     d <- wq_data %>% filter(analyte_name == input$analyte_selected) %>% 
       distinct(sample_method) %>% pull()
-    choices <- ifelse(length(d[!is.na(d)]), d[!is.na(d)], "None")
+    
+    choices <- if (is.na(d)) {
+      "None"
+    } else {
+      d
+    }
+    
     selectInput(ns("sampling_method_selected"), label = "Sample Method", 
                 choices = choices,
                 width = 160)
@@ -77,7 +83,7 @@ home_server <- function(input, output, session) {
     d1 <- wq_data %>% 
       filter(analyte_name == input$analyte_selected)
     
-    if(all(is.na(d1$sampling_method))) {
+    if(all(is.na(d1$sample_method))) {
       if (all(is.na(d1$analyte_quality))) {
         return(d1)
       } else {
@@ -85,9 +91,9 @@ home_server <- function(input, output, session) {
       }
     } else {
       if (all(is.na(d1$analyte_quality))) {
-        return(filter(d1, sampling_method == input$sampling_method_selected))
+        return(filter(d1, sample_method == input$sampling_method_selected))
       } else {
-        return(filter(d1, sampling_method == input$sampling_method_selected, 
+        return(filter(d1, sample_method == input$sampling_method_selected, 
                       analyte_quality == input$analyte_property_selected))
         
       }
