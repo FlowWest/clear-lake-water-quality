@@ -129,11 +129,12 @@ home_server <- function(input, output, session) {
   output$sites_map <- renderLeaflet(
     leaflet() %>% 
       addTiles() %>% 
-      addCircleMarkers(data=wq_stations, label=~station_name, 
+      addCircleMarkers(data=wq_stations, label=~station_name, fillColor = ~pal(data_source),
                        popup=~paste0("<b>", station_name, "</b><br>", 
                                      "<em>Station Code:&emsp;", station_code, "</em><br>", 
-                                     "<em>Parent Project:&emsp;", parent_project, "</em><br>",
-                                     "<button>Plot Series</button>")) %>% 
+                                     "<em>Parent Project:&emsp;", data_source, "</em><br>",
+                                     "<button>Plot Series</button>"), 
+                       weight = 2, color="black", fillOpacity = .8) %>% 
       setView(lng=-122.767084, lat=39.028363, zoom = 11)
   )
   

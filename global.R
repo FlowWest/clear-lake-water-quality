@@ -1,3 +1,4 @@
+library(readr)
 library(shiny)
 library(tidyverse)
 library(plotly)
@@ -15,8 +16,7 @@ clear_lake_wse <- read_rds("data/clear-lake-wse.rds")
 wq_data <- bind_rows(
   ceden_wq
 )
+analyte_choices <- wq_data %>% distinct(analyte_name) %>% pull()
+wq_stations <- read_rds("data/clear-lake-stations.rds")
 
-wq_stations <- bind_rows(
-  ceden_stations
-)
-
+pal <- colorFactor("Dark2", wq_stations$data_source)
