@@ -1,6 +1,6 @@
-bootstrapPage(
+fluidPage(
   title = "Clear Lake Water Quality Dashboard", 
-  theme = shinytheme('cosmo'),
+  theme = shinytheme('flatly'),
   header = includeCSS('www/styles.css'),
   home_UI('app')
 )

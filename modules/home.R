@@ -3,38 +3,48 @@ home_UI <- function(id) {
   
   tagList(
     fluidRow(
-      column(width = 12,
+      column(width = 12, id ="top-panel",
              tags$header(class = 'title',
-                         tags$img(src = 'big_valley_rancheria.png'),
-                         tags$h1('Clear Lake Water Quality', style="display:inline-block"))
+                         tags$img(src = 'big_valley_rancheria.png', width="90px"),
+                         tags$h2('Clear Lake Water Quality', style="display:inline-block"), 
+                         actionButton(ns("help_me"), label=NULL, 
+                                      icon = icon("question"),
+                                      class = "btn-primary btn-sm pull-right",
+                                      style="margin-left: 5px;border-radius:50%"))
       )
     ),
+    tags$hr(),
     fluidRow(
+      column(width = 12, class = 'col-md-3', 
+             id="left-panel",
+             tags$div(class = 'app-controls',
+                      tags$div(style="display:inline-block",
+                               selectInput(ns("analyte_selected"), label="Select Analyte", 
+                                           choices = analyte_choices, selectize = TRUE)),
+                      tags$div(style="display:inline-block",
+                               uiOutput(ns('select_sampling_ui'))),
+                      tags$div(style="display:inline-block",
+                               uiOutput(ns('select_property_ui'))),
+                      uiOutput(ns('select_depth'))
+             ), 
+             tags$div(id="clearlake-map",
+                      leafletOutput(ns('sites_map')))),
       column(width = 12, class = 'col-md-6',
-             tags$section(class = 'app-controls',
-                          tags$div(style="display:inline-block",
-                                   selectInput(ns("analyte_selected"), label="Select Analyte", 
-                                               choices = analyte_choices, selectize = TRUE)),
-                          tags$div(style="display:inline-block",
-                                   uiOutput(ns('select_sampling_ui'))),
-                          tags$div(style="display:inline-block",
-                                   uiOutput(ns('select_property_ui'))),
-                          uiOutput(ns('select_depth'))
-             ),
              plotlyOutput(ns('analyte_plot')),
-             uiOutput(ns('analyte_description'))),
-      column(width = 12, class = 'col-md-6',
-             leafletOutput(ns('sites_map')),
-             tags$h2('Clear Lake Elevation'), 
-             dygraphOutput(ns('lake_elev_plot'), height = '200px'))
-    ),
-    fluidRow(
-      column(width = 12,
-             tags$img(src = 'TransLogoTreb.png', width = '200px'),
-             tags$p('App developed and maintained by', 
-                    tags$a('Emanuel Rodriguez', href = 'mailto:erodriguez@flowwest.com', target = '_blank')))
-    )
-  )
+             tags$h3('Clear Lake Elevation'), 
+             dygraphOutput(ns('lake_elev_plot'), height = '200px')),
+      
+      column(width = 12, class = 'col-md-3', id="right-panel",
+             uiOutput(ns('analyte_description'))
+      ),
+      fluidRow(
+        column(width = 12,
+               id="bottom-panel",
+               tags$img(src = 'TransLogoTreb.png', width = '200px'),
+               tags$p('App developed and maintained by', 
+                      tags$a('Emanuel Rodriguez', href = 'mailto:erodriguez@flowwest.com', target = '_blank')))
+      )
+    ))
   
 }
 
@@ -44,13 +54,11 @@ home_server <- function(input, output, session) {
   output$select_property_ui <- renderUI({
     d <- wq_data %>% 
       filter(analyte_name == input$analyte_selected) %>% 
-      distinct(analyte_quality) %>% 
+      distinct(analyte_sample_fraction) %>% 
       pull()
     
-    if (length(d) == 1 && is.na(d)) return(NULL)
-    
     selectInput(ns("analyte_property_selected"), label = "Sample Fraction", 
-                choices = d[!is.na(d)], 
+                choices = d, 
                 width = 160)
   })
   
@@ -61,11 +69,7 @@ home_server <- function(input, output, session) {
     d <- wq_data %>% filter(analyte_name == input$analyte_selected) %>% 
       distinct(sample_method) %>% pull()
     
-    choices <- if (is.na(d)) {
-      "None"
-    } else {
-      d
-    }
+    choices <- d
     
     selectInput(ns("sampling_method_selected"), label = "Sample Method", 
                 choices = choices,
@@ -84,17 +88,17 @@ home_server <- function(input, output, session) {
       filter(analyte_name == input$analyte_selected)
     
     if(all(is.na(d1$sample_method))) {
-      if (all(is.na(d1$analyte_quality))) {
+      if (all(is.na(d1$analyte_sample_fraction))) {
         return(d1)
       } else {
-        return(filter(d1, analyte_quality == input$analyte_property_selected))
+        return(filter(d1, analyte_sample_fraction == input$analyte_property_selected))
       }
     } else {
-      if (all(is.na(d1$analyte_quality))) {
+      if (all(is.na(d1$analyte_sample_fraction))) {
         return(filter(d1, sample_method == input$sampling_method_selected))
       } else {
         return(filter(d1, sample_method == input$sampling_method_selected, 
-                      analyte_quality == input$analyte_property_selected))
+                      analyte_sample_fraction == input$analyte_property_selected))
         
       }
     }
@@ -112,14 +116,16 @@ home_server <- function(input, output, session) {
       !all(is.na(selected_analyte_data()$numeric_result)), 
       paste0("No data found for ", input$analyte_selected)
     ))
-
+    
     selected_analyte_data() %>% 
-      plot_ly(x=~sample_datetime, y=~numeric_result, type='scatter', mode='markers', 
+      plot_ly(x=~sample_datetime, y=~numeric_result, 
+              type='scatter', mode='markers', color=~source, 
               hoverinfo="text", 
               text = ~paste0(format(sample_datetime, "%b %d, %Y %H:%M:%S"), "<br>",
-                            "<b>", numeric_result, "</b> ", unit)) %>% 
-      layout(xaxis = list(title = "Sample Time"), 
-             yaxis = list(title = "Result"))
+                             "<b>", numeric_result, "</b> ", unit)) %>% 
+      layout(xaxis = list(title = ""), 
+             yaxis = list(title = "Result"), 
+             legend = list(orientation = 'h'))
   })
   
   output$analyte_description <- renderUI({
@@ -139,8 +145,10 @@ home_server <- function(input, output, session) {
   )
   
   output$lake_elev_plot <- renderDygraph(
-      dygraph(xts(x=clear_lake_wse$wse_ft, order.by = clear_lake_wse$date)) %>%
-        dySeries("V1", label = "WSE (ft)") %>% 
-        dyRangeSelector(dateWindow = c(as.Date("1990-01-01"), Sys.Date())) 
+    dygraph(xts(x=clear_lake_wse$wse_ft, order.by = clear_lake_wse$date)) %>%
+      dySeries("V1", label = "WSE (ft)") %>% 
+      dyRangeSelector(dateWindow = c(as.Date("1990-01-01"), Sys.Date())) 
   )
 }
+
+
