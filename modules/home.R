@@ -1,154 +1,57 @@
-home_UI <- function(id) {
-  ns <- NS(id) 
+home_ui <- function(id) {
+  ns <- NS(id)
   
   tagList(
-    fluidRow(
-      column(width = 12, id ="top-panel",
-             tags$header(class = 'title',
-                         tags$img(src = 'big_valley_rancheria.png', width="90px"),
-                         tags$h2('Clear Lake Water Quality', style="display:inline-block"), 
-                         actionButton(ns("help_me"), label=NULL, 
-                                      icon = icon("question"),
-                                      class = "btn-primary btn-sm pull-right",
-                                      style="margin-left: 5px;border-radius:50%"))
-      )
-    ),
-    tags$hr(),
-    fluidRow(
-      column(width = 12, class = 'col-md-3', 
-             id="left-panel",
-             tags$div(class = 'app-controls',
-                      tags$div(style="display:inline-block",
-                               selectInput(ns("analyte_selected"), label="Select Analyte", 
-                                           choices = analyte_choices, selectize = TRUE)),
-                      tags$div(style="display:inline-block",
-                               uiOutput(ns('select_sampling_ui'))),
-                      tags$div(style="display:inline-block",
-                               uiOutput(ns('select_property_ui'))),
-                      uiOutput(ns('select_depth'))
-             ), 
-             tags$div(id="clearlake-map",
-                      leafletOutput(ns('sites_map')))),
-      column(width = 12, class = 'col-md-6',
-             plotlyOutput(ns('analyte_plot')),
-             tags$h3('Clear Lake Elevation'), 
-             dygraphOutput(ns('lake_elev_plot'), height = '200px')),
-      
-      column(width = 12, class = 'col-md-3', id="right-panel",
-             uiOutput(ns('analyte_description'))
-      ),
-      fluidRow(
-        column(width = 12,
-               id="bottom-panel",
-               tags$img(src = 'TransLogoTreb.png', width = '200px'),
-               tags$p('App developed and maintained by', 
-                      tags$a('Emanuel Rodriguez', href = 'mailto:erodriguez@flowwest.com', target = '_blank')))
-      )
-    ))
-  
+    column(width = 3, 
+           selectInput(ns("analyte"), "Select analyte", 
+                       choices = bvr_analytes), 
+           uiOutput(ns("station_select_ui"))), 
+    column(width = 9, 
+           plotlyOutput(ns("analyte_plot")))
+  )
 }
 
 home_server <- function(input, output, session) {
+  
   ns <- session$ns
   
-  output$select_property_ui <- renderUI({
-    d <- wq_data %>% 
-      filter(analyte_name == input$analyte_selected) %>% 
-      distinct(analyte_sample_fraction) %>% 
-      pull()
-    
-    selectInput(ns("analyte_property_selected"), label = "Sample Fraction", 
-                choices = d, 
-                width = 160)
+  selected_wq_data <- reactive({
+    bvr_wq %>% 
+      filter(characteristic_name == input$analyte)
   })
   
-  # @question: should this ui even render when there is not sample method
-  #             to choose from? Currently it does render but just has a 
-  #             default choice of "None" -emanuel
-  output$select_sampling_ui <- renderUI({
-    d <- wq_data %>% filter(analyte_name == input$analyte_selected) %>% 
-      distinct(sample_method) %>% pull()
-    
-    choices <- d
-    
-    selectInput(ns("sampling_method_selected"), label = "Sample Method", 
-                choices = choices,
-                width = 160)
+  abundance_by_station <- reactive({
+    selected_wq_data() %>% 
+      group_by(station_id) %>% 
+      summarise(
+        total = n()
+      ) %>% ungroup()
   })
   
-  # @note: not using this right now, not even sure what it means
-  #         but its in the tablaeu app so... -emanuel
-  # output$select_depth <- renderUI({
-  #   selectInput('selected_depth', label = 'Select Depth', choices = 1:4)
-  # })
-  
-  
-  selected_analyte_data <- reactive({
-    d1 <- wq_data %>% 
-      filter(analyte_name == input$analyte_selected)
+  output$station_select_ui <- renderUI({
+    station_choices <- 
+      abundance_by_station() %>% 
+      arrange(desc(total))
     
-    if(all(is.na(d1$sample_method))) {
-      if (all(is.na(d1$analyte_sample_fraction))) {
-        return(d1)
-      } else {
-        return(filter(d1, analyte_sample_fraction == input$analyte_property_selected))
-      }
-    } else {
-      if (all(is.na(d1$analyte_sample_fraction))) {
-        return(filter(d1, sample_method == input$sampling_method_selected))
-      } else {
-        return(filter(d1, sample_method == input$sampling_method_selected, 
-                      analyte_sample_fraction == input$analyte_property_selected))
-        
-      }
-    }
-    
+    pickerInput(
+      inputId = ns("station"),
+      label = "Select station(s)", 
+      choices = station_choices$station_id,
+      choicesOpt = list(
+        subtext = paste(" observations", 
+                        station_choices$total,
+                        sep = ": "))
+    )
   })
   
   output$analyte_plot <- renderPlotly({
-    req(input$analyte_property_selected)
-    validate(need(
-      nrow(selected_analyte_data()) > 0, 
-      paste0("No data found for ", input$analyte_selected)
-    ))
     
-    validate(need(
-      !all(is.na(selected_analyte_data()$numeric_result)), 
-      paste0("No data found for ", input$analyte_selected)
-    ))
+    req(input$station)
     
-    selected_analyte_data() %>% 
-      plot_ly(x=~sample_datetime, y=~numeric_result, 
-              type='scatter', mode='markers', color=~source, 
-              hoverinfo="text", 
-              text = ~paste0(format(sample_datetime, "%b %d, %Y %H:%M:%S"), "<br>",
-                             "<b>", numeric_result, "</b> ", unit)) %>% 
-      layout(xaxis = list(title = ""), 
-             yaxis = list(title = "Result"), 
-             legend = list(orientation = 'h'))
+    selected_wq_data() %>% 
+      filter(station_id == input$station) %>% 
+      plot_ly(x=~activity_start_date, 
+              y=~result_value_numeric, 
+              type = 'scatter', mode='markers')
   })
-  
-  output$analyte_description <- renderUI({
-    tags$p('A description of the analyte')
-  })
-  
-  output$sites_map <- renderLeaflet(
-    leaflet() %>% 
-      addTiles() %>% 
-      addCircleMarkers(data=wq_stations, label=~station_name, fillColor = ~pal(data_source),
-                       popup=~paste0("<b>", station_name, "</b><br>", 
-                                     "<em>Station Code:&emsp;", station_code, "</em><br>", 
-                                     "<em>Parent Project:&emsp;", data_source, "</em><br>",
-                                     "<button>Plot Series</button>"), 
-                       weight = 2, color="black", fillOpacity = .8) %>% 
-      setView(lng=-122.767084, lat=39.028363, zoom = 11)
-  )
-  
-  output$lake_elev_plot <- renderDygraph(
-    dygraph(xts(x=clear_lake_wse$wse_ft, order.by = clear_lake_wse$date)) %>%
-      dySeries("V1", label = "WSE (ft)") %>% 
-      dyRangeSelector(dateWindow = c(as.Date("1990-01-01"), Sys.Date())) 
-  )
 }
-
-
