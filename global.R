@@ -6,18 +6,10 @@ library(leaflet)
 library(shinythemes)
 library(dygraphs)
 library(xts)
+library(shinyWidgets)
+
+library(adobeCreekData)
 
 source("modules/home.R")
 
-
-wq_data <- read_rds("data/ceden_analyte_data.rds")
-
-analyte_choices <- wq_data %>% distinct(analyte_name) %>% pull()
-wq_stations <- read_rds("data/clear-lake-stations.rds")
-
-pal <- colorFactor("Dark2", wq_stations$data_source)
-
-
-
-
-clear_lake_wse <- read_rds("data/clear-lake-wse.rds")
+bvr_analytes <- distinct(bvr_wq, characteristic_name) %>% pull()
