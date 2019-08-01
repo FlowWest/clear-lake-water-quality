@@ -10,7 +10,17 @@ home_ui <- function(id) {
                        choices = bvr_analytes), 
            uiOutput(ns("station_select_ui")), 
            tags$hr(), 
-           uiOutput(ns("about_selected_analyte"))), 
+           tabsetPanel(
+             type = "pills",
+             tabPanel(
+               "Station Map", 
+               leafletOutput(ns("station_map"))
+             ),
+             tabPanel(
+               "Analyte Details",
+               uiOutput(ns("about_selected_analyte"))
+             )
+           )), 
     column(width = 9, 
            plotlyOutput(ns("analyte_plot")), 
            plotlyOutput(ns("analyte_boxplot")))
@@ -82,6 +92,11 @@ home_server <- function(input, output, session) {
       tags$p('A fecal coliform (British: faecal coliform) is a facultatively anaerobic, rod-shaped, gram-negative, non-sporulating bacterium. Coliform bacteria generally originate in the intestines of warm-blooded animals. Fecal coliforms are capable of growth in the presence of bile salts or similar surface agents, are oxidase negative, and produce acid and gas from lactose within 48 hours at 44 ± 0.5°C.[1] The term "thermotolerant coliform" is more correct and is gaining acceptance over "fecal coliform".[2]'
       )
     )
+  })
+  
+  output$station_map <- renderLeaflet({
+    leaflet() %>% 
+      addTiles() 
   })
   
   

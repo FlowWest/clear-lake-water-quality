@@ -5,8 +5,8 @@ account: flowwest
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1057266
-bundleId: 2274841
+bundleId: 2277480
 url: https://flowwest.shinyapps.io/bvr-wq-preview/
-when: 1564429944.3044
+when: 1564506513.34669
 asMultiple: FALSE
 asStatic: FALSE
