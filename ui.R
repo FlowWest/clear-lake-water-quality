@@ -11,7 +11,7 @@ shinyUI(
                 "Big Valley Rancheria"), 
     windowTitle = "BVR Dashboard",
     # shinythemes::themeSelector(),
-    theme = shinythemes::shinytheme("yeti"),
+    theme = shinythemes::shinytheme("lumen"),
     header = includeCSS("www/styles.css"), 
     tabPanel(title = "Water Quality", 
              home_ui('app')), 

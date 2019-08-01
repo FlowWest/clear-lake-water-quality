@@ -94,9 +94,34 @@ home_server <- function(input, output, session) {
     )
   })
   
+  selected_station_map_marker <- reactive({
+    bvr_stations %>% 
+      filter(station_id == input$station)
+  })
+  
   output$station_map <- renderLeaflet({
     leaflet() %>% 
-      addTiles() 
+      addProviderTiles(providers$Esri.WorldTopoMap) %>% 
+      addCircleMarkers(data=bvr_stations, 
+                       fillOpacity = .8,
+                       weight = 2,
+                       color = "#2e2e2e", 
+                       fillColor = "#555555",
+                       opacity = 1, 
+                       label = ~station_id)
+  })
+  
+  observeEvent(input$station, {
+    leafletProxy("station_map") %>% 
+      clearGroup("selected_station") %>% 
+      addCircleMarkers(data=selected_station_map_marker(), 
+                       fillOpacity = .8,
+                       weight = 2,
+                       color = "#2e2e2e", 
+                       fillColor = "#28b62c",
+                       opacity = 1, 
+                       label = ~station_id, 
+                       group = "selected_station")
   })
   
   
