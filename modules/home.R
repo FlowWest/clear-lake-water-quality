@@ -10,7 +10,17 @@ home_ui <- function(id) {
                        choices = bvr_analytes), 
            uiOutput(ns("station_select_ui")), 
            tags$hr(), 
-           uiOutput(ns("about_selected_analyte"))), 
+           tabsetPanel(
+             type = "pills",
+             tabPanel(
+               "Analyte Details",
+               uiOutput(ns("about_selected_analyte"))
+             ),
+             tabPanel(
+               "Station Map", 
+               leafletOutput(ns("station_map"))
+             )
+           )), 
     column(width = 9, 
            plotlyOutput(ns("analyte_plot")), 
            plotlyOutput(ns("analyte_boxplot")))
@@ -76,12 +86,70 @@ home_server <- function(input, output, session) {
   
   
   output$about_selected_analyte <- renderUI({
+    description <- analyte_descriptions %>% 
+      filter(analyte == input$analyte) %>% 
+      pull(description)
+    
+    description_img <- analyte_descriptions %>% 
+      filter(analyte == input$analyte) %>% 
+      pull(img_url)
+    
+    description_cite <- analyte_descriptions %>% 
+      filter(analyte == input$analyte) %>% 
+      pull(source_citation)
+    
     tagList(
       tags$h4(input$analyte), 
-      tags$p("This is just what this section can look like, this text is not real."),
-      tags$p('A fecal coliform (British: faecal coliform) is a facultatively anaerobic, rod-shaped, gram-negative, non-sporulating bacterium. Coliform bacteria generally originate in the intestines of warm-blooded animals. Fecal coliforms are capable of growth in the presence of bile salts or similar surface agents, are oxidase negative, and produce acid and gas from lactose within 48 hours at 44 ± 0.5°C.[1] The term "thermotolerant coliform" is more correct and is gaining acceptance over "fecal coliform".[2]'
+      tags$p(paste(description)), 
+      actionLink(ns("analyte_image_link"), 
+                 href = "#", label = tags$img(src = paste(description_img), width = "400px")),
+      helpText(paste("source:", description_cite))
       )
+    
+  })
+  
+  observeEvent(input$analyte_image_link, {
+    
+    description_img <- analyte_descriptions %>% 
+      filter(analyte == input$analyte) %>% 
+      pull(img_url)
+    
+    showModal(
+      modalDialog(title = input$analyte, 
+                  tagList(
+                    tags$img(src = paste(description_img))
+                  ), size = "l")
     )
+  })
+  
+  selected_station_map_marker <- reactive({
+    bvr_stations %>% 
+      filter(station_id == input$station)
+  })
+  
+  output$station_map <- renderLeaflet({
+    leaflet() %>% 
+      addProviderTiles(providers$Esri.WorldTopoMap) %>% 
+      addCircleMarkers(data=bvr_stations, 
+                       fillOpacity = .8,
+                       weight = 2,
+                       color = "#2e2e2e", 
+                       fillColor = "#555555",
+                       opacity = 1, 
+                       label = ~station_id)
+  })
+  
+  observeEvent(input$station, {
+    leafletProxy("station_map") %>% 
+      clearGroup("selected_station") %>% 
+      addCircleMarkers(data=selected_station_map_marker(), 
+                       fillOpacity = .8,
+                       weight = 2,
+                       color = "#2e2e2e", 
+                       fillColor = "#28b62c",
+                       opacity = 1, 
+                       label = ~station_id, 
+                       group = "selected_station")
   })
   
   

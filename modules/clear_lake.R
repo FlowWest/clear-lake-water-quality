@@ -15,12 +15,12 @@ clear_lake_ui <- function(id) {
 clear_lake_server <- function(input, output, session) {
   
   output$lake_plot <- renderPlotly({
-    clear_lake_wq %>% 
+    clear_lake_wse %>% 
       plot_ly(x=~date, y=~gage_height_ft, type='scatter', mode='lines')
   })
   
   output$lake_boxplot <- renderPlotly({
-    clear_lake_wq %>% 
+    clear_lake_wse %>% 
       mutate(month = factor(month.abb[month(date)], levels = month.abb)) %>% 
       plot_ly(x=~month, y=~gage_height_ft, type='box')
   })

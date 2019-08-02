@@ -9,11 +9,11 @@ library(xts)
 library(shinyWidgets)
 library(lubridate)
 
-# library(adobeCreekData)
+library(adobeCreekData)
 
 source("modules/home.R")
 source("modules/clear_lake.R")
 
-bvr_wq <- readr::read_csv("data/temp-wq-data.csv")
-clear_lake_wq <- readr::read_csv("data/temp-wse-data.csv")
 bvr_analytes <- distinct(bvr_wq, characteristic_name) %>% pull()
+
+analyte_descriptions <- read_tsv("data/analyte-descriptions.csv")
