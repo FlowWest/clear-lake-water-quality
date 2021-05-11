@@ -4,13 +4,21 @@ home_ui <- function(id) {
   tagList(
     column(width = 3, 
            tags$h3("Fish Kills"),
+           tags$h4("Context"),
+           tags$p("This page shows fish kill data near in and around the Big Valley Rancheria. 
+                  This data comes from a citizen science inatrualist project ... whatever context we want to include."),
            tags$h4("How to Use"), 
            tags$p("Use this dashboard to visualize fish kill sites 
-                  in or around the Big Valley Rancheria."),
-           tags$p("Use inaturalist to record and view Fish Kills"), 
+                  in or around the Big Valley Rancheria. Hover over a 
+                  marker on the map to see information about the fish 
+                  kill recorded at that point."),
+           "Use", 
+           tags$a(href = "https://www.inaturalist.org/projects/clear-lake-fish-kill-monitoring-project?tab=observations", "inaturalist"), 
+           "to record and view Fish Kills", 
+           tags$h4("Relevent Events Nearby")
            ),
     column(width = 9,
-           leafletOutput(ns("fish_kills_map")))
+           leafletOutput(ns("fish_kills_map"), width = "100%", height = 400))
   )
 }
 
