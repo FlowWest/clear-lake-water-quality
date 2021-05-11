@@ -32,9 +32,9 @@ home_server <- function(input, output, session) {
   ns <- session$ns
   
   selected_wq_data <- reactive({
-    bvr_wq %>% 
-      filter(characteristic_name == input$analyte, 
-             !is.na(result_value_numeric)) 
+    bvr_water_quality %>% 
+      filter(analyte == input$analyte, 
+             !is.na(value_numeric)) 
   })
   
   abundance_by_station <- reactive({
@@ -70,17 +70,17 @@ home_server <- function(input, output, session) {
     
     req(input$station)
     selected_wq_data_in_station() %>% 
-      plot_ly(x=~activity_start_date, 
-              y=~result_value_numeric, 
+      plot_ly(x=~datetime, 
+              y=~value_numeric, 
               type = 'scatter', mode='markers') %>% 
       layout(xaxis = list(title = ""), yaxis = list(title = input$analyte))
   })
   
   output$analyte_boxplot <- renderPlotly({
     selected_wq_data_in_station() %>% 
-      mutate(month = factor(month.abb[month(activity_start_date)], 
+      mutate(month = factor(month.abb[month(datetime)], 
                             levels = month.abb)) %>% 
-      plot_ly(x=~month, y=~result_value_numeric) %>% 
+      plot_ly(x=~month, y=~value_numeric) %>% 
       add_boxplot(boxpoints = "outliers")
   })
   
