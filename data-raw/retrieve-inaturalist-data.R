@@ -31,3 +31,7 @@ leaflet() %>%
                    opacity =  1, fillOpacity = 1, 
                    labelOptions = labelOptions(style = list("font-size" = "14px"))
   )
+
+# Add useful summary stats to table once we decide what we want (for now just current data)
+summary_table <- fish_kill_data %>% select(-photo)
+write_rds(summary_table, "data/summary_table.rds")

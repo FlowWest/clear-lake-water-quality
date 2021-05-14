@@ -15,10 +15,11 @@ home_ui <- function(id) {
            "Use", 
            tags$a(href = "https://www.inaturalist.org/projects/clear-lake-fish-kill-monitoring-project?tab=observations", "inaturalist"), 
            "to record and view Fish Kills", 
-           tags$h4("Relevent Events Nearby")
-           ),
+           tags$h4("Relevent Events Nearby")),
     column(width = 9,
-           leafletOutput(ns("fish_kills_map"), width = "100%", height = 400))
+           leafletOutput(ns("fish_kills_map"), width = "100%", height = 400),
+           tags$h4("Data Summary"),
+           formattableOutput(ns("table")))
   )
 }
 
@@ -44,6 +45,12 @@ home_server <- function(input, output, session) {
                       opacity =  1, fillOpacity = 1, 
                       labelOptions = labelOptions(style = list("font-size" = "14px")))
   })
+  output$table <- renderFormattable({formattable(summary_table,
+                                                 align = c("l", "c", "c", "c", "c", "c", "c", "c"),
+                                                 list(taxon_name = 
+                                                        formatter("span", 
+                                                                  style = ~style(color = "grey", 
+                                                                                 font.weight = "bold"))))})
   
 }
 
