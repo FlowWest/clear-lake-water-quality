@@ -17,7 +17,7 @@ home_ui <- function(id) {
            "to record and view Fish Kills", 
            tags$h4("Relevent Events Nearby")),
     column(width = 9,
-           leafletOutput(ns("fish_kills_map"), width = "100%", height = 400),
+           leafletOutput(ns("fish_kills_map"), width = "100%", height = 700),
            tags$h4("Data Summary"),
            formattableOutput(ns("table")))
   )
