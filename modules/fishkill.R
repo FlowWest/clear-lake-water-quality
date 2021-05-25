@@ -1,4 +1,4 @@
-home_ui <- function(id) {
+fishkill_ui <- function(id) {
   ns <- NS(id)
   
   tagList(
@@ -23,7 +23,7 @@ home_ui <- function(id) {
   )
 }
 
-home_server <- function(input, output, session) {
+fishkill_server <- function(input, output, session) {
   
   ns <- session$ns
   labels <- sprintf("<strong>Taxon:</strong> <strong>%s</strong> (%s) <br/> <strong>User:</strong> %s <br/> <strong>Date:</strong> %s <br/> <strong>Description:</strong> %s",

@@ -8,7 +8,7 @@ shinyUI(
     theme = shinythemes::shinytheme("lumen"),
     header = includeCSS("www/styles.css"), 
     tabPanel(title = "Fish Kill Data", 
-             home_ui('app')),
+             fishkill_ui('app')),
     tabPanel(title = "Water Quality", 
              water_quality_ui('app')), 
     tabPanel(title = "Clear Lake", 

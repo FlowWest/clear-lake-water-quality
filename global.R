@@ -12,7 +12,7 @@ library(formattable)
 
 library(adobeCreekData)
 
-source("modules/fish_kill.R")
+source("modules/fishkill.R")
 source("modules/clear_lake.R")
 source("modules/water_quality.R")
 
