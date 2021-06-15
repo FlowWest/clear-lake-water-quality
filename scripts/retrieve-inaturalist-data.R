@@ -10,7 +10,8 @@ fish_kill_data <- tibble(taxon_name = fish_kill_observations$taxon.name,
                          description = fish_kill_observations$description,
                          latitude = fish_kill_observations$latitude,
                          longitude = fish_kill_observations$longitude,
-                         photo = fish_kill_observations$photos) %>%
+                         photo = fish_kill_observations$photos, 
+                         link = fish_kill_observations$uri) %>%
   mutate(latitude = as.numeric(latitude),
          longitude = as.numeric(longitude))
 write_rds(fish_kill_data, "data/fish_kill_data.rds")
@@ -33,5 +34,15 @@ leaflet() %>%
   )
 
 # Add useful summary stats to table once we decide what we want (for now just current data)
-summary_table <- fish_kill_data %>% select(-photo)
+summary_table <- fish_kill_data %>% 
+  select(-photo) %>%
+  mutate(description = ifelse(is.na(description), "No Description", description)) %>%
+  rename("Taxon Name" = taxon_name,
+         "Taxon Common Name" = taxon_common_name, 
+         "User" = user,
+         "Date Observed" = date_observed,
+         "Record Id" = record_id,
+         "Description" = description,
+         "Link" = link)
+
 write_rds(summary_table, "data/summary_table.rds")
