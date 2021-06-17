@@ -5,7 +5,7 @@ shinyUI(
                 "Big Valley Rancheria"), 
     windowTitle = "BVR Dashboard",
     # shinythemes::themeSelector(),
-    theme = shinythemes::shinytheme("readable"),
+    theme = shinythemes::shinytheme("cosmo"),
     header = includeCSS("www/styles.css"), 
     tabPanel(title = "Fish Kill Data", 
              fishkill_ui('app')),

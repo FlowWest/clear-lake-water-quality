@@ -25,6 +25,16 @@ fishkill_ui <- function(id) {
 
 fishkill_server <- function(input, output, session) {
   
+  make_popup <- function(name, common_name, date_observed, desc, inat_link) {
+    sprintf("<strong>Taxon:</strong> <strong>%s</strong> (%s)<br/> <strong>Date:</strong> %s <br/> <strong>Description:</strong> %s <br/> <a href='%s' target='_blank'>View at iNaturalist</a>",
+            name, 
+            common_name,
+            date_observed, 
+            desc, 
+            inat_link
+    ) %>% lapply(htmltools::HTML)
+  }
+  
   ns <- session$ns
   labels <- sprintf("<strong>Taxon:</strong> <strong>%s</strong> (%s) <br/> <strong>User:</strong> %s <br/> <strong>Date:</strong> %s <br/> <strong>Description:</strong> %s",
                     fish_kill_data$taxon_name, 
@@ -37,13 +47,15 @@ fishkill_server <- function(input, output, session) {
   
   output$fish_kills_map <- renderLeaflet({
     leaflet() %>%
-    addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
-    addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
-    addCircleMarkers(data = fish_kill_data,  label = labels,
-                      color = "#972D15", 
-                      weight = 1.5,
-                      opacity =  1, fillOpacity = 1, 
-                      labelOptions = labelOptions(style = list("font-size" = "14px")))
+      addProviderTiles(providers$Esri.WorldTopoMap, group = "Map") %>% 
+      addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
+      addCircleMarkers(data = fish_kill_data,  
+                       label = labels,
+                       popup = ~make_popup(taxon_name, taxon_common_name, date_observed, description, link),
+                       color = "#972D15", 
+                       weight = 1.5,
+                       opacity =  1, fillOpacity = 1, 
+                       labelOptions = labelOptions(style = list("font-size" = "14px")))
   })
   output$table <- renderFormattable({formattable(summary_table,
                                                  align = c("l", "c", "c", "c", "c", "c", "c", "c"),
