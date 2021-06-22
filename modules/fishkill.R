@@ -88,8 +88,8 @@ fishkill_server <- function(input, output, session) {
     rumsey_flows %>% 
       plot_ly(x = ~Date, y = ~ temps) %>%
       add_lines(alpha = 0.6)  %>% 
-      layout(title = 'Temperature °F at Real Time Monitoring Station',
-             yaxis = list(title = 'Temperature °F',
+      layout(title = 'Temperature F at Real Time Monitoring Station',
+             yaxis = list(title = 'Temperature degrees F',
                           zeroline = TRUE),
              xaxis = list(title = 'Date'))
   })
