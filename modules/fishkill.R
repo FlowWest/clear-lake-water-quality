@@ -15,11 +15,20 @@ fishkill_ui <- function(id) {
            "Use", 
            tags$a(href = "https://www.inaturalist.org/projects/clear-lake-fish-kill-monitoring-project?tab=observations", "inaturalist"), 
            "to record and view Fish Kills", 
-           tags$h4("Relevent Events Nearby")),
+           tags$h4("Relevent Events Nearby"),
+           tabsetPanel(
+             type = "pills",
+             tabPanel(
+               "Flow at Rumsey Gage",
+               plotlyOutput(ns("rumsey_plot"))),
+             tabPanel(
+               "Real Time Monitoring",
+               plotlyOutput(ns("monitoring_plot")))
+           )),
     column(width = 9,
            leafletOutput(ns("fish_kills_map"), width = "100%", height = 700),
            tags$h4("Data Summary"),
-           formattableOutput(ns("table")))
+           formattableOutput(ns("summary_table")))
   )
 }
 
@@ -57,13 +66,33 @@ fishkill_server <- function(input, output, session) {
                        opacity =  1, fillOpacity = 1, 
                        labelOptions = labelOptions(style = list("font-size" = "14px")))
   })
-  output$table <- renderFormattable({formattable(summary_table,
+  output$summary_table <- renderFormattable({formattable(summary_table,
                                                  align = c("l", "c", "c", "c", "c", "c", "c", "c"),
                                                  list(taxon_name = 
                                                         formatter("span", 
                                                                   style = ~style(color = "grey", 
                                                                                  font.weight = "bold"))))})
+  output$rumsey_plot <- renderPlotly({
+  rumsey_flows %>% 
+    plot_ly(x = ~Date, y = ~ `Daily Flow Rumsey`) %>%
+    add_lines(alpha = 0.6)  %>% 
+    layout(title = 'Flow at Rumsey Gage (last month)',
+           yaxis = list(title = 'Flow Rumsey Gage',
+                        zeroline = TRUE),
+           xaxis = list(title = 'Date'))
+  })
   
+  output$monitoring_plot <- renderPlotly({
+    
+    temps <- rep(c(70, 78, 80, 75, 67, 70, 79, 70, 70, 71), 3)
+    rumsey_flows %>% 
+      plot_ly(x = ~Date, y = ~ temps) %>%
+      add_lines(alpha = 0.6)  %>% 
+      layout(title = 'Temperature °F at Real Time Monitoring Station',
+             yaxis = list(title = 'Temperature °F',
+                          zeroline = TRUE),
+             xaxis = list(title = 'Date'))
+  })
 }
 
 

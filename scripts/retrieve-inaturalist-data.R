@@ -29,13 +29,12 @@ labels <- sprintf("<strong>Taxon:</strong> <strong>%s</strong> (%s) <br/> <stron
 # Add useful summary stats to table once we decide what we want (for now just current data)
 summary_table <- fish_kill_data %>% 
   select(-photo) %>%
-  mutate(description = ifelse(is.na(description), "No Description", description)) %>%
+  mutate(description = ifelse(is.na(description), "No Description", description),
+         Date = as.Date(date_observed)) %>%
+  group_by(taxon_name, taxon_common_name) %>%
+  summarise("Number of Observations" = n(),
+            "Date Range of Observations" = paste(min(Date), '-' ,max(Date))) %>%
   rename("Taxon Name" = taxon_name,
-         "Taxon Common Name" = taxon_common_name, 
-         "User" = user,
-         "Date Observed" = date_observed,
-         "Record Id" = record_id,
-         "Description" = description,
-         "Link" = link)
+         "Taxon Common Name" = taxon_common_name)
 
 write_rds(summary_table, "data/summary_table.rds")
