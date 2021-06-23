@@ -9,6 +9,7 @@ library(xts)
 library(shinyWidgets)
 library(lubridate)
 library(formattable)
+library(sparklines)
 
 library(adobeCreekData)
 

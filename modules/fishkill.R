@@ -11,20 +11,24 @@ fishkill_ui <- function(id) {
            tags$p("Use this dashboard to visualize fish kill sites 
                   in or around the Big Valley Rancheria. Hover over a 
                   marker on the map to see information about the fish 
-                  kill recorded at that point."),
+                  kill recorded at that point. Click on a marker to get
+                  additional information and click the View at iNaturalist link to view origional record."),
            "Use", 
            tags$a(href = "https://www.inaturalist.org/projects/clear-lake-fish-kill-monitoring-project?tab=observations", "inaturalist"), 
            "to record and view Fish Kills", 
            tags$h4("Relevent Events Nearby"),
+           tags$hr(),
            tabsetPanel(
              type = "pills",
              tabPanel(
                "Flow at Rumsey Gage",
                plotlyOutput(ns("rumsey_plot"))),
+             
              tabPanel(
                "Real Time Monitoring",
                plotlyOutput(ns("monitoring_plot")))
-           )),
+           ),
+           tags$hr()),
     column(width = 9,
            leafletOutput(ns("fish_kills_map"), width = "100%", height = 700),
            tags$h4("Data Summary"),
@@ -79,20 +83,34 @@ fishkill_server <- function(input, output, session) {
     layout(title = 'Flow at Rumsey Gage (last month)',
            yaxis = list(title = 'Flow Rumsey Gage',
                         zeroline = TRUE),
-           xaxis = list(title = 'Date'))
+           xaxis = list(title = 'Date'),
+           margin = list(l = 20, 
+                         r = 15, 
+                         b = 15, 
+                         t = 60, 
+                         pad = 20))
   })
-  
   output$monitoring_plot <- renderPlotly({
-    
+
     temps <- rep(c(70, 78, 80, 75, 67, 70, 79, 70, 70, 71), 3)
-    rumsey_flows %>% 
+    rumsey_flows %>%
       plot_ly(x = ~Date, y = ~ temps) %>%
-      add_lines(alpha = 0.6)  %>% 
+      add_lines(alpha = 0.6)  %>%
       layout(title = 'Temperature F at Real Time Monitoring Station',
              yaxis = list(title = 'Temperature degrees F',
                           zeroline = TRUE),
-             xaxis = list(title = 'Date'))
+             xaxis = list(title = 'Date'),
+             margin = list(l = 20,
+                           r = 15,
+                           b = 15,
+                           t = 60,
+                           pad = 20))
   })
+  # output$monitoring_plot <- renderSparkline({
+  #   
+  #   temps <- rep(c(70, 78, 80, 75, 67, 70, 79, 70, 70, 71), 3)
+  #   sparkline(temps, "line")
+  # })
 }
 
 
