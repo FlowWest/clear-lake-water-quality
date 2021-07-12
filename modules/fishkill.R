@@ -65,9 +65,11 @@ fishkill_server <- function(input, output, session) {
       addCircleMarkers(data = fish_kill_data,  
                        label = labels,
                        popup = ~make_popup(taxon_name, taxon_common_name, date_observed, description, link),
-                       color = "#972D15", 
+                       color = "black",
+                       fillColor = ~ifelse(is_recent, "#e7298a", "#7570b3"),
                        weight = 1.5,
-                       opacity =  1, fillOpacity = 1, 
+                       opacity =  1, 
+                       fillOpacity = ~ifelse(is_recent, 1, .5), 
                        labelOptions = labelOptions(style = list("font-size" = "14px")))
   })
   output$summary_table <- renderFormattable({formattable(summary_table,
