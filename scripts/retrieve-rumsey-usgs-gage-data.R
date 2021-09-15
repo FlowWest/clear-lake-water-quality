@@ -13,3 +13,16 @@ rumsey_flows <- rumsey_flows_prior_2_weeks %>%
   as_tibble()
 
 write_rds(rumsey_flows, "data/rumsey_flows.rds")
+
+
+# clear lake elevation
+clear_lake_id <- 11450000
+clear_lake_param_cd <- "00065"
+
+clear_lake_elevation <- readNWISdv(siteNumbers = clear_lake_id, 
+                                   parameterCd = clear_lake_param_cd, 
+                                   startDate = Sys.Date() - 60, 
+                                   endDate = Sys.Date()) %>% 
+  select(Date, `Elevation (ft)` = X_00065_00003)
+
+write_rds(clear_lake_elevation, "data/clear-lake-elevation.rds")
