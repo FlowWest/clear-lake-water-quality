@@ -7,18 +7,18 @@ water_quality_ui <- function(id) {
            tags$p("Use this dashboard to visualize different analytes 
                   of interest located in or around the Big Valley Rancheria."),
            selectInput(ns("analyte"), "Select analyte", 
-                       choices = bvr_analytes), 
-           uiOutput(ns("station_select_ui")), 
+                       choices = clear_lake_wq_choices), 
+           uiOutput(ns("station_select_ui")), #server insert ui for us
            tags$hr(), 
            tabsetPanel(
              type = "pills",
              tabPanel(
-               "Analyte Details",
-               uiOutput(ns("about_selected_analyte"))
+               "Station Map", 
+               leafletOutput(ns("station_map")),
              ),
              tabPanel(
-               "Station Map", 
-               leafletOutput(ns("station_map"))
+               "Analyte Details",
+               uiOutput(ns("about_selected_analyte"))
              )
            )), 
     column(width = 9, 
@@ -32,28 +32,34 @@ water_quality_server <- function(input, output, session) {
   ns <- session$ns
   
   selected_wq_data <- reactive({
-    bvr_water_quality %>% 
-      filter(analyte == input$analyte, 
-             !is.na(value_numeric)) 
+    clear_lake_wq %>% 
+      filter(analyte_name == input$analyte, 
+             !is.na(numeric_result)) 
   })
   
+  #group station by code, calculate total obs for selected analyte
   abundance_by_station <- reactive({
     selected_wq_data() %>% 
-      group_by(station_id) %>% 
+      group_by(station_code) %>% 
       summarise(
         total = n()
       ) %>% ungroup()
   })
-  
+
+
   output$station_select_ui <- renderUI({
+    # wait for this selection explicitly
+    req(input$analyte)
+
     station_choices <- 
       abundance_by_station() %>% 
       arrange(desc(total))
-    
+    #function returns UI 
     pickerInput(
       inputId = ns("station"),
       label = "Select station(s)", 
-      choices = station_choices$station_id,
+      choices = station_choices$station_code,
+      multiple = FALSE,
       choicesOpt = list(
         subtext = paste(" observations", 
                         station_choices$total,
@@ -63,95 +69,97 @@ water_quality_server <- function(input, output, session) {
   
   selected_wq_data_in_station <- reactive({
     selected_wq_data() %>% 
-      filter(station_id == input$station)
+      filter(station_code == input$station)
   })
   
   output$analyte_plot <- renderPlotly({
-    
+
     req(input$station)
-    selected_wq_data_in_station() %>% 
-      plot_ly(x=~datetime, 
-              y=~value_numeric, 
-              type = 'scatter', mode='markers') %>% 
+    selected_wq_data_in_station() %>%
+      plot_ly(x=~sample_datetime,
+              y=~numeric_result,
+              type = 'scatter', mode='markers') %>%
       layout(xaxis = list(title = ""), yaxis = list(title = input$analyte))
   })
-  
-  output$analyte_boxplot <- renderPlotly({
-    selected_wq_data_in_station() %>% 
-      mutate(month = factor(month.abb[month(datetime)], 
-                            levels = month.abb)) %>% 
-      plot_ly(x=~month, y=~value_numeric) %>% 
+
+ output$analyte_boxplot <- renderPlotly({
+    req(input$station)
+    selected_wq_data_in_station() %>%
+      mutate(month = factor(month.abb[month(sample_datetime)],
+                            levels = month.abb)) %>%
+      plot_ly(x=~month, y=~numeric_result) %>%
       add_boxplot(boxpoints = "outliers")
   })
-  
-  
+
+
   output$about_selected_analyte <- renderUI({
-    description <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
+    description <- analyte_descriptions %>%
+      filter(analyte == input$analyte) %>%
       pull(description)
-    
-    description_img <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
-      pull(img_url)
-    
-    description_cite <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
-      pull(source_citation)
-    
+
+    # description_img <- analyte_descriptions %>%
+    #   filter(analyte == input$analyte) %>%
+    #   pull(img_url)
+    # 
+    # description_cite <- analyte_descriptions %>%
+    #   filter(analyte == input$analyte) %>%
+    #   pull(source_citation)
+
     tagList(
-      tags$h4(input$analyte), 
-      tags$p(paste(description)), 
-      actionLink(ns("analyte_image_link"), 
-                 href = "#", label = tags$img(src = paste(description_img), width = "400px")),
-      helpText(paste("source:", description_cite))
+      tags$h4(input$analyte),
+      tags$p(paste(description)),
+      # actionLink(ns("analyte_image_link"),
+      #            href = "#", label = tags$img(src = paste(description_img), width = "400px")),
+      # helpText(paste("source:", description_cite))
     )
-    
+
   })
-  
+
   observeEvent(input$analyte_image_link, {
-    
-    description_img <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
+
+    description_img <- analyte_descriptions %>%
+      filter(analyte == input$analyte) %>%
       pull(img_url)
-    
+
     showModal(
-      modalDialog(title = input$analyte, 
+      modalDialog(title = input$analyte,
                   tagList(
                     tags$img(src = paste(description_img))
                   ), size = "l")
     )
   })
-  
+
   selected_station_map_marker <- reactive({
-    bvr_stations %>% 
-      filter(station_id == input$station)
+    clear_lake_stations %>%
+      filter(station_code == input$station)
   })
-  
+
   output$station_map <- renderLeaflet({
-    leaflet() %>% 
-      addProviderTiles(providers$Esri.WorldTopoMap) %>% 
-      addCircleMarkers(data=bvr_stations, 
-                       fillOpacity = .8,
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldTopoMap) %>%
+      addCircleMarkers(data=clear_lake_stations,
+                       radius = 4,
+                       fillOpacity = .4,
                        weight = 2,
-                       color = "#2e2e2e", 
+                       color = "#2e2e2e",
                        fillColor = "#555555",
-                       opacity = 1, 
-                       label = ~station_id)
+                       opacity = .4,
+                       label = ~station_code)
   })
-  
+
   observeEvent(input$station, {
-    leafletProxy("station_map") %>% 
-      clearGroup("selected_station") %>% 
-      addCircleMarkers(data=selected_station_map_marker(), 
+    leafletProxy("station_map") %>%
+      clearGroup("selected_station") %>%
+      addCircleMarkers(data = selected_station_map_marker(),
                        fillOpacity = .8,
                        weight = 2,
-                       color = "#2e2e2e", 
+                       color = "#2e2e2e",
                        fillColor = "#28b62c",
-                       opacity = 1, 
-                       label = ~station_id, 
+                       opacity = 1,
+                       label = ~station_code,
                        group = "selected_station")
   })
-  
+
   
 }
 

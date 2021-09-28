@@ -66,7 +66,7 @@ fishkill_server <- function(input, output, session) {
   ) %>% lapply(htmltools::HTML)
   
   
-  pal <- colorFactor(palette = c("#e41a1c", "#984ea3"), 
+  pal <- colorFactor(palette = c("#64f588", "#5cc8e0"), 
                      domain = c("recent observation (15 days)", 
                                 "archived observation (16+ days)"), 
                      reverse = TRUE)
@@ -79,10 +79,10 @@ fishkill_server <- function(input, output, session) {
                        popup = ~make_popup(taxon_name, taxon_common_name, date_observed, description, link),
                        color = ~pal(is_recent),
                        fillColor = ~pal(is_recent),
-                       weight = 1.5,
+                       weight = 4.5,
                        opacity =  1, 
-                       fillOpacity = ~ifelse(is_recent == "recent observation (15 days)", 1, .5), 
-                       labelOptions = labelOptions(style = list("font-size" = "14px"))) %>% 
+                       fillOpacity = ~ifelse(is_recent == "recent observation (15 days)", 3, .5), 
+                       labelOptions = labelOptions(style = list("font-size" = "20px"))) %>% 
       leaflet::addLegend("bottomright", pal = pal, values = ~is_recent,
                 title = "Observation type",
                 opacity = 1

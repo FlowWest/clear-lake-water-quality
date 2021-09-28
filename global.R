@@ -9,18 +9,24 @@ library(xts)
 library(shinyWidgets)
 library(lubridate)
 library(formattable)
-# library(sparklines)
-
-# library(adobeCreekData)
 
 source("modules/fishkill.R")
 source("modules/clear_lake.R")
 source("modules/water_quality.R")
 
-bvr_analytes <- read_rds("data/bvr-analytes.rds")
+# Water Quality -----------------------------------------------------------------
 
+# look for the data we wrote from the other repo
+
+# read the stations datasets 
+clear_lake_stations <- read_rds("data/clear-lake-stations.rds")
+
+# read the observations datasets
+clear_lake_wq <- read_rds("data/clear-lake-water-quality.rds")
+clear_lake_wq_choices <- sort(pull(distinct(clear_lake_wq, analyte_name)))
 analyte_descriptions <- read_tsv("data/analyte-descriptions.csv")
 
+# Fish Kill ---------------------------------------------------------------------
 # add tag to show if recent observation
 fish_kill_data <- read_rds("data/fish_kill_data.rds") %>% 
   mutate(is_recent = ifelse(date_observed > today() - 15, 
