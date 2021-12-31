@@ -2,6 +2,15 @@ water_quality_ui <- function(id) {
   ns <- NS(id)
   
   tagList(
+    tags$head(
+      tags$style(
+        "body{
+      height: 584px;
+      width: 1005px;
+      margin: auto;
+          }"
+      )
+    ),
     column(width = 3, 
            tags$h3("Water Quality"),
            tags$p("Use this dashboard to visualize different analytes 
@@ -26,6 +35,9 @@ water_quality_ui <- function(id) {
            plotlyOutput(ns("analyte_boxplot")))
   )
 }
+# analyte <- c('Dissolved Oxygen', 'Fluridone', 'pH', 'Specific COnductance', 
+#              'Specific Conductivity', 'Temperature', 'Turbidity')
+# condition <- c(5.0, )
 
 water_quality_server <- function(input, output, session) {
   
@@ -88,6 +100,7 @@ water_quality_server <- function(input, output, session) {
       mutate(month = factor(month.abb[month(sample_datetime)],
                             levels = month.abb)) %>%
       plot_ly(x=~month, y=~numeric_result) %>%
+      layout(xaxis = list(title = ""), yaxis = list(title = input$analyte)) %>% 
       add_boxplot(boxpoints = "outliers")
   })
 

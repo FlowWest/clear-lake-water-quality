@@ -1,7 +1,15 @@
 fishkill_ui <- function(id) {
   ns <- NS(id)
-  
   tagList(
+      tags$head(
+        tags$style(
+          "body{
+      height: 584px;
+      width: 1005px;
+      margin: auto;
+          }"
+        )
+      ),
     column(width = 4, 
            tags$h3("Fish Kills"),
            tags$h4("Context"),
@@ -18,22 +26,22 @@ fishkill_ui <- function(id) {
                   additional information and click the View at iNaturalist link to view origional record."),
            "Use", 
            tags$a(href = "https://www.inaturalist.org/projects/clear-lake-fish-kill-monitoring-project?tab=observations", "iNaturalist"), 
-           "to record and view Fish Kills",
+           "to record and view Fish Kills.",
            tags$p("Step by step instruction on reporting Fish Kills on Clear Lake with iNaturalist, can be found", 
                   tags$a("here", href="Reporting fish kills with iNaturalist 2021 V1B.pdf", 
                          target = "_blank")),
-           tags$h4("Relevent Events Nearby"),
-           tags$hr(),
-           tabsetPanel(
-             type = "pills",
-             tabPanel(
-               "Elevation at Clear Lake, Rumsey Gage",
-               plotlyOutput(ns("clear_lake_plot"))),
+           # tags$h4("Relevent Events Nearby"),
+           # tags$hr()),
+           # tabsetPanel(
+             # type = "pills",
+             # tabPanel(
+             #   "Elevation at Clear Lake, Rumsey Gage",
+             #   plotlyOutput(ns("clear_lake_plot"))),
              
-             tabPanel(
-               "Real Time Monitoring",
-               plotlyOutput(ns("monitoring_plot")))
-           ),
+             # tabPanel(
+             #   "Real Time Monitoring",
+             #   plotlyOutput(ns("monitoring_plot")))
+           # ),
            tags$hr()),
     column(width = 8,
            leafletOutput(ns("fish_kills_map"), width = "100%", height = 700),
@@ -41,7 +49,8 @@ fishkill_ui <- function(id) {
            DT::dataTableOutput(ns("summary_table")), 
            tags$br(),
            tags$br())
-  )
+  
+)
 }
 
 fishkill_server <- function(input, output, session) {
@@ -88,7 +97,14 @@ fishkill_server <- function(input, output, session) {
                 opacity = 1
       )
   })
-  output$summary_table <- DT::renderDataTable(arrange(summary_table, desc(date_observed)), 
+  summary_table<- summary_table %>% 
+    rename("Taxon Name" = taxon_name,
+         "Common Name" = taxon_common_name,
+         "Date Observed" = date_observed,
+         'Description' = description) %>% 
+    select(-longitude, -latitude)
+  
+  output$summary_table <- DT::renderDataTable(arrange(summary_table, desc('Date Observed')), 
                                               extensions = "Buttons", 
                                               options = list(dom = 'Btp', 
                                                              buttons = 
@@ -100,36 +116,37 @@ fishkill_server <- function(input, output, session) {
   
 
   
-  output$clear_lake_plot <- renderPlotly({
-  clear_lake_elevation %>% 
-    plot_ly(x = ~Date, y = ~ `Elevation (ft)`) %>%
-    add_lines(alpha = 0.6)  %>% 
-    layout(title = "Elevation at Lakeport, Clear Lake", 
-           yaxis = list(title = 'Elevation (ft.)',
-                        zeroline = TRUE),
-           xaxis = list(title = 'Date'),
-           margin = list(l = 20, 
-                         r = 15, 
-                         b = 15, 
-                         t = 60, 
-                         pad = 20))
-  })
-  output$monitoring_plot <- renderPlotly({
-
-    temps <- rep(c(70, 78, 80, 75, 67, 70, 79, 70, 70, 71), 3)
-    rumsey_flows %>%
-      plot_ly(x = ~Date, y = ~ temps) %>%
-      add_lines(alpha = 0.6)  %>%
-      layout(title = 'Temperature F at Real Time Monitoring Station',
-             yaxis = list(title = 'Temperature degrees F',
-                          zeroline = TRUE),
-             xaxis = list(title = 'Date'),
-             margin = list(l = 20,
-                           r = 15,
-                           b = 15,
-                           t = 60,
-                           pad = 20))
-  })
+  # output$clear_lake_plot <- renderPlotly({
+  # clear_lake_elevation %>%
+  #     filter(Date > Sys.Date() - 30) %>% 
+  #   plot_ly(x = ~Date, y = ~ `Elevation (ft)`) %>%
+  #   add_lines(alpha = 0.6)  %>% 
+  #   layout(title = "Elevation at Lakeport, Clear Lake", 
+  #          yaxis = list(title = 'Elevation (ft.)',
+  #                       zeroline = TRUE),
+  #          xaxis = list(title = 'Date'),
+  #          margin = list(l = 20, 
+  #                        r = 15, 
+  #                        b = 15, 
+  #                        t = 60, 
+  #                        pad = 20))
+  # })
+  # output$monitoring_plot <- renderPlotly({
+  # 
+  #   temps <- rep(c(70, 78, 80, 75, 67, 70, 79, 70, 70, 71), 3)
+  #   rumsey_flows %>%
+  #     plot_ly(x = ~Date, y = ~ temps) %>%
+  #     add_lines(alpha = 0.6)  %>%
+  #     layout(title = 'Temperature F at Real Time Monitoring Station',
+  #            yaxis = list(title = 'Temperature degrees F',
+  #                         zeroline = TRUE),
+  #            xaxis = list(title = 'Date'),
+  #            margin = list(l = 20,
+  #                          r = 15,
+  #                          b = 15,
+  #                          t = 60,
+  #                          pad = 20))
+  # })
 }
 
 

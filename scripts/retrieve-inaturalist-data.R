@@ -30,7 +30,8 @@ labels <- sprintf("<strong>Taxon:</strong> <strong>%s</strong> (%s) <br/> <stron
 summary_table <- fish_kill_data %>% 
   select(-photo) %>%
   mutate(description = ifelse(is.na(description), "No Description", description),
-         Date = as.Date(date_observed)) %>% 
+         Date = as.Date(date_observed)) %>%
   select(taxon_common_name, taxon_name, date_observed, description, latitude, longitude)
+ 
 
 write_rds(summary_table, "data/summary_table.rds")

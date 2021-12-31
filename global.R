@@ -9,9 +9,11 @@ library(xts)
 library(shinyWidgets)
 library(lubridate)
 library(formattable)
+library(httr)
+library(jsonlite)
 
 source("modules/fishkill.R")
-source("modules/clear_lake.R")
+source("modules/wq_api.R")
 source("modules/water_quality.R")
 
 # Water Quality -----------------------------------------------------------------
@@ -22,7 +24,9 @@ source("modules/water_quality.R")
 clear_lake_stations <- read_rds("data/clear-lake-stations.rds")
 
 # read the observations datasets
-clear_lake_wq <- read_rds("data/clear-lake-water-quality.rds")
+clear_lake_wq <- read_rds("data/clear-lake-water-quality.rds") %>% 
+  filter(analyte_name %in% c("Dissolved Oxygen", "pH", "Temperature", "Turbidity", "Fluridone", 
+                             "Specific Conductance", "SpecificConductivity"))
 clear_lake_wq_choices <- sort(pull(distinct(clear_lake_wq, analyte_name)))
 analyte_descriptions <- read_tsv("data/analyte-descriptions.csv")
 
@@ -37,3 +41,7 @@ summary_table <- read_rds("data/summary_table.rds")
 rumsey_flows <- read_rds("data/rumsey_flows.rds")
 
 clear_lake_elevation <- read_rds("data/clear-lake-elevation.rds")
+
+#WQ API ------------------------------------------------------------------------
+apikey <- Sys.getenv("API_KEY")
+base_url <- "https://www.wqdatalive.com/api/v1/devices"
