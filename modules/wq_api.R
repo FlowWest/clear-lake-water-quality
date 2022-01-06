@@ -24,52 +24,58 @@ wqdata_ui <- function(id) {
       height: 584px;
       width: 1005px;
       margin: auto;
-          }")
+          }"),
+      tags$style(type='text/css', ".selectize-input { font-size: 14px; line-height: 23px;} 
+      .selectize-dropdown { font-size: 14px; line-height: 28px; }")
     ),
-    tags$h3("Clear Lake Live Data "),
+    tags$h3("Clear Lake Realtime Monitoring "),
     div(
       style = "display: inline-block;vertical-align:top; width: 250px;",
       radioButtons(
         ns("monitoring_station"),
-        label = "Monitoring Stations",
+        label = h5("Monitoring Sensors"),
         choices = list(
-          "Riviera Monitoring Sensor" = "riviera",
-          "Oaks Monitoring Sensor" = "oaks"
+          "Riviera West" = "riviera",
+          "Clearlake Oaks" = "oaks"
         ),
         selected = "riviera"
       )
     ),
-    div(
-      style = "display: inline-block;vertical-align:top; width: 300px;",
-      uiOutput(ns("water_variable_select_ui"))
-      ),
+    div(style = "display: inline-block;vertical-align:top; width: 300px;",
+        uiOutput(ns(
+          "water_variable_select_ui"
+        ))),
     div(
       style = "display: inline-block;vertical-align:top; width: 300px;",
       dateRangeInput(
         ns('dateRange'),
-        label = 'Date range input: YYYY-MM-DD',
+        label = h5('Date Range Input: YYYY-MM-DD'),
         start = Sys.Date() - 4,
         end = Sys.Date(),
         min = Sys.Date() - 30,
         max = Sys.Date()
       )
     ),
-    # actionButton(ns("button"), "Apply Changes!"),
+    br(),
+    br(),
     plotlyOutput(ns("wq_plot")),
     br(),
     tags$p(
       "Clear Lake is a natural freshwater lake in Lake County in
                   the U.S. state of California, north of Napa County and
                   San Francisco. It is the largest natural freshwater lake
-                  wholly within the state, with 68 square miles (180 km2) of
+                  wholly within the state, with 68 square miles (180 square kilometers) of
                   surface area. At 480,000 years, it is the oldest lake in
                   North America.[2] It is the latest lake to occupy a site
                   with a history of lakes stretching back at
-                  least 2,500,000 years.[3] The dashboard above is built with WQdata Live API.
-                  It shows the hourly data of interest for the current month.
-      Use pull down menu to visualize the data, hover the mouse over the graph to find value of specific hour, and
-      drag the mouse over the graph to zoom in on the graph.
-      "
+                  least 2,500,000 years.[3] The data for Clear Lake is collected from two sensors,
+                  one on the west side of Clear Lake (Riviera West), and another on the east side of 
+                  Clear Lake (Clearlake Oaks).
+                  The dashboard visualizes the hourly data of interest from WQData Live 
+                  for the past 30 days. Use the pull-down menu to visualize the data, 
+                  hover the mouse over the graph to find the value of a specific hour, and
+                  drag the mouse over the chart to zoom in on the graph."
+      ,style="text-align:justify;color:black;background-color:papayawhip;padding:15px;border-radius:10px"
     )
   )
   
@@ -96,7 +102,7 @@ wq_data_server <- function(input, output, session) {
   #Content is in unicode - need to convert it to text and parse the JSON
   # devices <- fromJSON(rawToChar(api_call$content))
   # devices_df <- do.call(what = "rbind",
-                        # args = lapply(devices, as.data.frame))
+  # args = lapply(devices, as.data.frame))
   # riviera_id <- devices_df['id'][1, ]
   # oaks_id <- devices_df['id'][2, ]
   # api_riviera_wq <- get_station_parameters(riviera_id)$name[13:20]
@@ -108,8 +114,9 @@ wq_data_server <- function(input, output, session) {
     
     if (input$monitoring_station == "riviera") {
       #access api based on station code to find the monitoring variables
-      api_riviera_wq <- get_station_parameters(riviera_id)$name[13:20]
-      #map new wq variable to the variables from api 
+      api_riviera_wq <-
+        get_station_parameters(riviera_id)$name[13:20]
+      #map new wq variable to the variables from api
       #apply function recode to the variables from api using the mapped variables
       #Display the recoded variables as the dropdown menu
       do.call(recode,
@@ -125,10 +132,10 @@ wq_data_server <- function(input, output, session) {
                 setNames(edited_oaks_wq, api_oaks_wq)
               ))
     }
-  })%>% bindCache(input$monitoring_station) 
+  })
   
   
-  #create water variable selection ui 
+  #create water variable selection ui
   output$water_variable_select_ui <- renderUI({
     #wait for this selection
     req(input$monitoring_station)
@@ -138,7 +145,7 @@ wq_data_server <- function(input, output, session) {
     #function returns UI
     selectInput(
       ns("water_variable"),
-      label = "Water Quality",
+      label = h5("Water Quality Indicators"),
       selected = NULL,
       choices = water_variable_choices,
       width = '250px',
@@ -159,21 +166,47 @@ wq_data_server <- function(input, output, session) {
         names(riviera_vals) <- edited_riviera_wq
         #call associated parameter id based wq variabe
         parameter_id <- riviera_vals[water_variable]
-        data_url <- paste0(base_url,"/",riviera_id,"/","parameters/",parameter_id,
-                 "/data?",apikey,"&from=",query_start_date,'%2010:00:00&to=',
-                 query_end_date,"%2010:00:00")
-      } else if (monitoring_station == 'oaks'){
+        data_url <-
+          paste0(
+            base_url,
+            "/",
+            riviera_id,
+            "/",
+            "parameters/",
+            parameter_id,
+            "/data?",
+            apikey,
+            "&from=",
+            query_start_date,
+            '%2010:00:00&to=',
+            query_end_date,
+            "%2010:00:00"
+          )
+      } else if (monitoring_station == 'oaks') {
         oaks_vals <- get_station_parameters(oaks_id)$id[13:24]
         names(oaks_vals) <- edited_oaks_wq
         parameter_id <- oaks_vals[water_variable]
-        data_url <-paste0(base_url,"/",oaks_id,"/","parameters/",
-            parameter_id,"/data?",apikey,"&from=",query_start_date,'%2010:00:00&to=',
-            query_end_date,"%2010:00:00")
-        }
-        variable_json_data <- GET(url = data_url)
-        variable_info <- fromJSON(rawToChar(variable_json_data$content))
-        raw_data <- variable_info$data
-        
+        data_url <- paste0(
+          base_url,
+          "/",
+          oaks_id,
+          "/",
+          "parameters/",
+          parameter_id,
+          "/data?",
+          apikey,
+          "&from=",
+          query_start_date,
+          '%2010:00:00&to=',
+          query_end_date,
+          "%2010:00:00"
+        )
+      }
+      variable_json_data <- GET(url = data_url)
+      variable_info <-
+        fromJSON(rawToChar(variable_json_data$content))
+      raw_data <- variable_info$data
+      
     }
   dataInput <- reactive({
     req(input$water_variable)
@@ -184,26 +217,26 @@ wq_data_server <- function(input, output, session) {
       input$monitoring_station,
       input$water_variable
     ) %>%
+      
       mutate_at('value', as.numeric) %>%
-      mutate("timestamp" = ymd_hms(timestamp, tz = Sys.timezone()))
-  }) 
-    # bindCache(
-    #   input$dateRange[1],
-    #   input$dateRange[2],
-    #   input$monitoring_station,
-    #   input$water_variable
-    # )
+      mutate("timestamp" = ymd_hms(timestamp, tz = Sys.timezone()),
+             "date" = as.Date(timestamp))
+  })
   
   #Visualization
   output$wq_plot <- renderPlotly({
     # req(input$water_variable, input$monitoring_station)
     
     #Check whether string starts with an opening bracket and closing bracket
-    unit <- stringr::str_extract(string =input$water_variable,
-                                 pattern ="(?<=\\().*(?=\\))")
+    unit <- stringr::str_extract(string = input$water_variable,
+                                 pattern = "(?<=\\().*(?=\\))")
     hover_label <-
-      paste0("'<br>" , stringr::str_extract(string = input$water_variable, pattern = "^[^\\(]*"), "", 
-    ": ")
+      paste0(
+        "'<br>" ,
+        stringr::str_extract(string = input$water_variable, pattern = "^[^\\(]*"),
+        "",
+        ": "
+      )
     formatted_title <-
       paste(
         input$water_variable,
@@ -218,17 +251,21 @@ wq_data_server <- function(input, output, session) {
         type = 'scatter',
         mode = 'lines',
         hoverinfo = 'text',
-        text = ~ paste("<br> Time Stamp: ",
-                       timestamp,
-                       hover_label,
-                       paste(value, unit))
+        text = ~ paste(
+          "<br>Time: ",
+          paste(format(timestamp, format ="%H:%M"), "PST"),
+          "<br>Date: ",
+          date,
+          hover_label,
+          paste(value, unit)
+        )
       ) %>%
       layout(
         title = formatted_title,
         xaxis = list(title = 'Date'),
         yaxis = list(title = input$water_variable)
-      ) %>% 
-      plotly::config(displayModeBar = FALSE) %>% 
+      ) %>%
+      plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
-  })
+  }) %>% bindCache(input$dateRange[1], input$dateRange[2],input$water_variable)
 }
