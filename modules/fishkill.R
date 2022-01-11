@@ -45,8 +45,10 @@ fishkill_ui <- function(id) {
            tags$hr()),
     column(width = 8,
            leafletOutput(ns("fish_kills_map"), width = "100%", height = 700),
-           tags$h4("Data Summary"),
-           DT::dataTableOutput(ns("summary_table")), 
+           # tags$h4("Data Summary"),
+            tags$br(),
+           downloadButton(ns('download'), "Download Data Summary"),
+           # DT::dataTableOutput(ns("summary_table")), 
            tags$br(),
            tags$br())
   
@@ -104,16 +106,22 @@ fishkill_server <- function(input, output, session) {
          'Description' = description) %>% 
     select(-longitude, -latitude)
   
-  output$summary_table <- DT::renderDataTable(arrange(summary_table, desc('Date Observed')), 
-                                              extensions = "Buttons", 
-                                              options = list(dom = 'Btp', 
-                                                             buttons = 
-                                                               list(list(
-                                                                 extend = 'collection',
-                                                                 buttons = c('copy','csv'),
-                                                                 text = 'Download'
-                                                               ))))
-  
+  output$download <- downloadHandler(
+    filename = "fish_kill_summary_table.csv",
+    content = function(file) {
+      write.csv(summary_table, file, row.names = FALSE)
+    }
+  )
+  # output$summary_table <- DT::renderDataTable(arrange(summary_table, desc('Date Observed')), 
+  #                                             extensions = "Buttons", 
+  #                                             options = list(dom = 'Btp', 
+  #                                                            buttons = 
+  #                                                              list(list(
+  #                                                                extend = 'collection',
+  #                                                                buttons = c('copy','csv'),
+  #                                                                text = 'Download'
+  #                                                              ))))
+  # 
 
   
   # output$clear_lake_plot <- renderPlotly({

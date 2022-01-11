@@ -28,12 +28,12 @@ wqdata_ui <- function(id) {
       tags$style(type='text/css', ".selectize-input { font-size: 14px; line-height: 23px;} 
       .selectize-dropdown { font-size: 14px; line-height: 28px; }")
     ),
-    tags$h3("Clear Lake Realtime Monitoring "),
+    tags$h3("Realtime Monitoring "),
     div(
       style = "display: inline-block;vertical-align:top; width: 250px;",
       radioButtons(
         ns("monitoring_station"),
-        label = h5("Monitoring Sensors"),
+        label = h5("Monitoring Sensor"),
         choices = list(
           "Riviera West" = "riviera",
           "Clearlake Oaks" = "oaks"
@@ -52,13 +52,16 @@ wqdata_ui <- function(id) {
         label = h5('Date Range Input: YYYY-MM-DD'),
         start = Sys.Date() - 4,
         end = Sys.Date(),
-        min = Sys.Date() - 30,
+        min = Sys.Date() - 90,
         max = Sys.Date()
       )
     ),
     br(),
     br(),
-    plotlyOutput(ns("wq_plot")),
+    tabsetPanel(
+      tabPanel("Plot", plotlyOutput(ns("wq_plot"))),
+      tabPanel("Sensor Map", leafletOutput(ns("sensor_map")))
+    ),
     br(),
     tags$p(
       "Clear Lake is a natural freshwater lake in Lake County in
@@ -72,7 +75,7 @@ wqdata_ui <- function(id) {
                   one on the west side of Clear Lake (Riviera West), and another on the east side of 
                   Clear Lake (Clearlake Oaks).
                   The dashboard visualizes the hourly data of interest from WQData Live 
-                  for the past 30 days. Use the pull-down menu to visualize the data, 
+                  for the past 90 days. Use the pull-down menu to visualize the data, 
                   hover the mouse over the graph to find the value of a specific hour, and
                   drag the mouse over the chart to zoom in on the graph."
       ,style="text-align:justify;color:black;background-color:papayawhip;padding:15px;border-radius:10px"
@@ -82,40 +85,19 @@ wqdata_ui <- function(id) {
 }
 
 wq_data_server <- function(input, output, session) {
-  #create selection that returns monitoring device id
-  
-  get_station_parameters <-
-    function(station_id) {
-      device_url = paste0(base_url, "/", station_id, "/", "parameters?", apikey)
-      device = GET(url = device_url)
-      device_parameters <- fromJSON(rawToChar(device$content))
-      parameters_df <- do.call(rbind.data.frame, device_parameters)
-    }
+  #cache the parameters and save it as a vector
   ns <- session$ns
   #Declarations
-  riviera_id <- 2656
-  oaks_id <- 2660
-  # devices_full_url  = paste0(base_url, "?", apikey)
-  #Access API
-  # api_call = GET(url = devices_full_url)
-  #Could check status_code or content
-  #Content is in unicode - need to convert it to text and parse the JSON
-  # devices <- fromJSON(rawToChar(api_call$content))
-  # devices_df <- do.call(what = "rbind",
-  # args = lapply(devices, as.data.frame))
-  # riviera_id <- devices_df['id'][1, ]
-  # oaks_id <- devices_df['id'][2, ]
-  # api_riviera_wq <- get_station_parameters(riviera_id)$name[13:20]
-  # api_oaks_wq <- get_station_parameters(oaks_id)$name[13:24]
-  #Create wq data dropdown based on station selected
+  #put this in global.r file
+  #same as function
   selected_station <- reactive({
-    #Need to create a condition where
+    
     req(input$monitoring_station)
     
     if (input$monitoring_station == "riviera") {
       #access api based on station code to find the monitoring variables
       api_riviera_wq <-
-        get_station_parameters(riviera_id)$name[13:20]
+        wq_parameters$name[1:8]
       #map new wq variable to the variables from api
       #apply function recode to the variables from api using the mapped variables
       #Display the recoded variables as the dropdown menu
@@ -125,7 +107,7 @@ wq_data_server <- function(input, output, session) {
                 setNames(edited_riviera_wq, api_riviera_wq)
               ))
     } else if (input$monitoring_station == "oaks") {
-      api_oaks_wq <- get_station_parameters(oaks_id)$name[13:24]
+      api_oaks_wq <- wq_parameters$name[9:20]
       do.call(recode,
               c(
                 list(api_oaks_wq),
@@ -145,7 +127,7 @@ wq_data_server <- function(input, output, session) {
     #function returns UI
     selectInput(
       ns("water_variable"),
-      label = h5("Water Quality Indicators"),
+      label = h5("Water Quality Indicator"),
       selected = NULL,
       choices = water_variable_choices,
       width = '250px',
@@ -160,6 +142,7 @@ wq_data_server <- function(input, output, session) {
               query_end_date,
               monitoring_station,
               water_variable) {
+      query_end_date <- query_end_date + 1
       if (monitoring_station == "riviera") {
         #create a key value pair where key is the wq variables and values are the api associated id
         riviera_vals <- get_station_parameters(riviera_id)$id[13:20]
@@ -178,9 +161,9 @@ wq_data_server <- function(input, output, session) {
             apikey,
             "&from=",
             query_start_date,
-            '%2010:00:00&to=',
+            '%2008:00:00&to=',
             query_end_date,
-            "%2010:00:00"
+            "%2008:00:00"
           )
       } else if (monitoring_station == 'oaks') {
         oaks_vals <- get_station_parameters(oaks_id)$id[13:24]
@@ -206,10 +189,11 @@ wq_data_server <- function(input, output, session) {
       variable_info <-
         fromJSON(rawToChar(variable_json_data$content))
       raw_data <- variable_info$data
+      # View(raw_data)
       
     }
   dataInput <- reactive({
-    req(input$water_variable)
+    req(input$water_variable,input$dateRange[1], input$dateRange[2])
     
     get_data(
       input$dateRange[1],
@@ -217,24 +201,22 @@ wq_data_server <- function(input, output, session) {
       input$monitoring_station,
       input$water_variable
     ) %>%
-      
-      mutate_at('value', as.numeric) %>%
-      mutate("timestamp" = ymd_hms(timestamp, tz = Sys.timezone()),
+      mutate_at('value', as.numeric) %>% 
+      mutate("timestamp" = ymd_hms(timestamp) - hours(8),
              "date" = as.Date(timestamp))
   })
   
   #Visualization
   output$wq_plot <- renderPlotly({
-    # req(input$water_variable, input$monitoring_station)
+    req(input$water_variable, input$dateRange[1], input$dateRange[2])
     
     #Check whether string starts with an opening bracket and closing bracket
     unit <- stringr::str_extract(string = input$water_variable,
                                  pattern = "(?<=\\().*(?=\\))")
     hover_label <-
       paste0(
-        "'<br>" ,
+        "<br>" ,
         stringr::str_extract(string = input$water_variable, pattern = "^[^\\(]*"),
-        "",
         ": "
       )
     formatted_title <-
@@ -242,7 +224,7 @@ wq_data_server <- function(input, output, session) {
         input$water_variable,
         "from",
         str_to_title(input$monitoring_station),
-        "Monitoring Sensor at Clearlake"
+        "Monitoring Sensor at Clear Lake"
       )
     dataInput() %>%
       plot_ly(
@@ -261,11 +243,41 @@ wq_data_server <- function(input, output, session) {
         )
       ) %>%
       layout(
-        title = formatted_title,
+        title = (list(text = formatted_title, y = 0.97)),
         xaxis = list(title = 'Date'),
         yaxis = list(title = input$water_variable)
       ) %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
-  }) %>% bindCache(input$dateRange[1], input$dateRange[2],input$water_variable)
+  })%>% bindCache(input$dateRange[1], input$dateRange[2],input$water_variable)
+  
+  selected_sensor <- reactive({
+    monitoring_stations %>% 
+      filter(station_name == input$monitoring_station)
+  })
+  
+  output$sensor_map <- renderLeaflet({
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldTopoMap) %>% 
+      addCircleMarkers(data = monitoring_stations,
+                       radius = 6,
+                       fillOpacity =.4,
+                       weight =2,
+                       color = "#2e2e2e",
+                       fillColor = "#555555",
+                       opacity = .4) %>% 
+      setView(lng = -122.708927, lat= 39.000284, zoom = 12)
+  })
+  observeEvent(input$water_variable,{
+    leafletProxy("sensor_map") %>%
+      clearGroup("selected_sensor") %>%
+      addCircleMarkers(data = selected_sensor(),
+                       fillOpacity = .8,
+                       weight = 2,
+                       color = "#2e2e2e",
+                       fillColor = "#28b62c",
+                       opacity = 1,
+                       group = "selected_sensor")
+      # setView(zoom = 4)
+  })
 }

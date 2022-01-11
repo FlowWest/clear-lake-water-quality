@@ -47,3 +47,15 @@ apikey <- Sys.getenv("API_KEY")
 base_url <- "https://www.wqdatalive.com/api/v1/devices"
 edited_oaks_wq <- read_rds("data/oaks_water_quality.rds")
 edited_riviera_wq <- read_rds("data/riviera_water_quality.rds")
+riviera_id <- 2656
+oaks_id <- 2660
+wq_parameters <- read.csv("data/water_quality_parameters.csv")
+#create selection that returns monitoring device id
+get_station_parameters <-
+  function(station_id) {
+    device_url = paste0(base_url, "/", station_id, "/", "parameters?", apikey)
+    device = GET(url = device_url)
+    device_parameters <- fromJSON(rawToChar(device$content))
+    parameters_df <- do.call(rbind.data.frame, device_parameters)
+  }
+monitoring_stations <- read_rds("data/monitoring_stations_coordinates.rds")

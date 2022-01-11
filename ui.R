@@ -1,8 +1,6 @@
 shinyUI( 
   navbarPage(
-    title = div(tags$img(src="big_valley_rancheria.png", 
-                         width = "30px", `margin-top`="-4px;"), 
-                "Big Valley Rancheria",style = "font-size:20px;" ), 
+    title = div("Clear Lake Water Quality Monitoring",style = "font-size:20px;" ),
     windowTitle = "BVR Dashboard",
 
     theme = shinythemes::shinytheme("yeti"),
