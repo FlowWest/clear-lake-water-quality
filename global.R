@@ -11,10 +11,14 @@ library(lubridate)
 library(formattable)
 library(httr)
 library(jsonlite)
+library(dataRetrieval)
+library(shinydashboard)
+
 
 source("modules/fishkill.R")
 source("modules/wq_api.R")
 source("modules/water_quality.R")
+
 
 # Water Quality -----------------------------------------------------------------
 
@@ -29,6 +33,9 @@ clear_lake_wq <- read_rds("data/clear-lake-water-quality.rds") %>%
                              "Specific Conductance", "SpecificConductivity"))
 clear_lake_wq_choices <- sort(pull(distinct(clear_lake_wq, analyte_name)))
 analyte_descriptions <- read_tsv("data/analyte-descriptions.csv")
+siteNumber <- "11450000"
+parametercd <- "00065"
+
 
 # Fish Kill ---------------------------------------------------------------------
 # add tag to show if recent observation

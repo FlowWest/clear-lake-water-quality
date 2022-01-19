@@ -12,7 +12,6 @@ fishkill_ui <- function(id) {
       ),
     column(width = 4, 
            tags$h3("Fish Kills"),
-           tags$h4("Context"),
            tags$p("This page shows fish kill data in Clear Lake California.  
                   This data comes from a citizen science iNaturalist project. Elevation data
                   used is obtained from the USGS water data service using", 
@@ -47,7 +46,7 @@ fishkill_ui <- function(id) {
            leafletOutput(ns("fish_kills_map"), width = "100%", height = 700),
            # tags$h4("Data Summary"),
             tags$br(),
-           downloadButton(ns('download'), "Download Data Summary"),
+           downloadButton(ns('download'), "Download Data Summary CSV"),
            # DT::dataTableOutput(ns("summary_table")), 
            tags$br(),
            tags$br())
