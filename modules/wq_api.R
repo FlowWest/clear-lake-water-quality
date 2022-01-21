@@ -26,9 +26,10 @@ wqdata_ui <- function(id) {
       )
     ),
     tags$h3("Realtime Monitoring "),
+    
     fluidRow(column(
       width = 12,
-      column(width = 3,
+      column(width = 4,
              leafletOutput(ns(
                "sensor_selection_map"
              ), height = 200)),
@@ -42,12 +43,12 @@ wqdata_ui <- function(id) {
       #     selected = "riviera"
       #   )
       # ),
-      column(width = 3,
+      column(width = 4,
              uiOutput(ns(
                "water_variable_select_ui"
              ))),
       column(
-        width = 3,
+        width = 4,
         dateRangeInput(
           ns('dateRange'),
           label = h5('Date Range Input: YYYY-MM-DD'),
@@ -91,10 +92,11 @@ wqdata_ui <- function(id) {
     
     fluidRow(
       column(width = 12,
-        column(width = 8, tabsetPanel(
-        tabPanel("Plot", plotlyOutput(ns("wq_plot"))),
-        tabPanel("Sensor Map", leafletOutput(ns("sensor_map")))
-      )),
+        column(width = 8, plotlyOutput(ns("wq_plot"))),
+      # tabsetPanel(
+      #   tabPanel("Plot", plotlyOutput(ns("wq_plot"))),
+      #   tabPanel("Sensor Map", leafletOutput(ns("sensor_map")))
+      # )),
         column(width = 4,
              fluidRow(
                     valueBoxOutput(ns(
@@ -140,7 +142,9 @@ wq_data_server <- function(input, output, session) {
   #put this in global.r file
   #same as function
   # temperature <- c("Surface Temperature (°F)", "Lake Bed Temperature (°F)")
-  # station_data <- reactiveValues(clickedMarker= NULL)
+  
+  default_sensor <- monitoring_stations %>% 
+    filter(station_name == "riviera")
   
   output$sensor_selection_map <-renderLeaflet({
     leaflet() %>%
@@ -157,13 +161,45 @@ wq_data_server <- function(input, output, session) {
       ) %>%
       setView(lng = -122.708927,
               lat = 39.000284,
-              zoom = 10)
+              zoom = 10) %>% 
+      addCircleMarkers(
+        data = default_sensor,
+        fillOpacity = .8,
+        weight = 2,
+        color = "#2e2e2e",
+        fillColor = "#28b62c",
+        opacity = 1,
+        group = "default_sensor"
+      ) 
   })
-  observeEvent(input$sensor_selection_map_marker_click, {
-   clickedMarker <- input$sensor_selection_map_marker_click
-    print(clickedMarker)
+  selected_sensor <- reactive({
+    monitoring_stations %>%
+      filter(station_name == input$sensor_selection_map_marker_click['id'])
   })
 
+  # station_data <- reactiveValues(input$sensor_selection_map_marker_click)
+  # observeEvent(input$sensor_selection_map_marker_click, {
+  #  clickedMarker <- input$sensor_selection_map_marker_click
+  #   print(clickedMarker)
+  # })
+  observeEvent(input$sensor_selection_map_marker_click, {
+      leafletProxy("sensor_selection_map") %>%
+      clearGroup("default_sensor") %>%
+      clearGroup('selected_sensor') %>% 
+      addCircleMarkers(
+        data = selected_sensor(),
+        fillOpacity = .8,
+        weight = 2,
+        color = "#2e2e2e",
+        fillColor = "#28b62c",
+        opacity = 1,
+        group = "selected_sensor"
+      )
+      
+
+    # setView(zoom = 4)
+    })
+    
   # observeEvent(input$sensor_selection_map_click,{
   #   data$clickedMarker <- NULL
   #   print(data$clickedMarker)})
@@ -361,42 +397,42 @@ wq_data_server <- function(input, output, session) {
       plotly::config(showLink = FALSE)
   }) %>% bindCache(input$dateRange[1], input$dateRange[2], input$water_variable)
   
-  selected_sensor <- reactive({
-    monitoring_stations %>%
-      filter(station_name == input$sensor_selection_map_marker_click['id'])
-  })
+  # selected_sensor <- reactive({
+  #   monitoring_stations %>%
+  #     filter(station_name == input$sensor_selection_map_marker_click['id'])
+  # })
   
-  output$sensor_map <- renderLeaflet({
-    leaflet() %>%
-      addProviderTiles(providers$Esri.WorldTopoMap) %>%
-      addCircleMarkers(
-        data = monitoring_stations,
-        radius = 6,
-        fillOpacity = .4,
-        weight = 2,
-        color = "#2e2e2e",
-        fillColor = "#555555",
-        opacity = .4
-      ) %>%
-      setView(lng = -122.708927,
-              lat = 39.000284,
-              zoom = 12)
-  })
-  observeEvent(input$water_variable, {
-    leafletProxy("sensor_map") %>%
-      clearGroup("selected_sensor") %>%
-      addCircleMarkers(
-        data = selected_sensor(),
-        fillOpacity = .8,
-        weight = 2,
-        color = "#2e2e2e",
-        fillColor = "#28b62c",
-        opacity = 1,
-        group = "selected_sensor"
-      )
+  # output$sensor_map <- renderLeaflet({
+  #   leaflet() %>%
+  #     addProviderTiles(providers$Esri.WorldTopoMap) %>%
+  #     addCircleMarkers(
+  #       data = monitoring_stations,
+  #       radius = 6,
+  #       fillOpacity = .4,
+  #       weight = 2,
+  #       color = "#2e2e2e",
+  #       fillColor = "#555555",
+  #       opacity = .4
+  #     ) %>%
+  #     setView(lng = -122.708927,
+  #             lat = 39.000284,
+  #             zoom = 12)
+  # })
+  # observeEvent(input$water_variable, {
+  #   leafletProxy("sensor_map") %>%
+  #     clearGroup("selected_sensor") %>%
+  #     addCircleMarkers(
+  #       data = selected_sensor(),
+  #       fillOpacity = .8,
+  #       weight = 2,
+  #       color = "#2e2e2e",
+  #       fillColor = "#28b62c",
+  #       opacity = 1,
+  #       group = "selected_sensor"
+  #     )
     
     # setView(zoom = 4)
-  })
+  # })
  
   data_gage_Input <- reactive({
     req(input$dateRange[1], input$dateRange[1])
