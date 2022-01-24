@@ -32,7 +32,7 @@ wqdata_ui <- function(id) {
       column(width = 4,
              leafletOutput(ns(
                "sensor_selection_map"
-             ), height = 200)),
+             ), height = 150)),
       # column(
       #   width = 3,
       #   radioButtons(
@@ -145,23 +145,29 @@ wq_data_server <- function(input, output, session) {
   
   default_sensor <- monitoring_stations %>% 
     filter(station_name == "riviera")
-  
+  # usgs_sensor <- monitoring_stations %>% 
+  #   filter(station_name == "usgs_gage")
+  api_sensors <- monitoring_stations %>%
+    filter(station_name != "usgs_gage")
+
   output$sensor_selection_map <-renderLeaflet({
     leaflet() %>%
       addProviderTiles(providers$OpenStreetMap) %>%
       addCircleMarkers(
-        data = monitoring_stations,
-        layerId = monitoring_stations$station_name,
+        data = api_sensors,
+        layerId = api_sensors$station_name,
         radius = 6,
         fillOpacity = .4,
         weight = 2,
         color = "#2e2e2e",
         fillColor = "#555555",
-        opacity = .4
+        opacity = .4,
+        popup = paste(str_to_title(api_sensors$station_name), "Sensor"),
+        label = paste(str_to_title(api_sensors$station_name), "Sensor")
       ) %>%
       setView(lng = -122.708927,
               lat = 39.000284,
-              zoom = 10) %>% 
+              zoom = 11) %>% 
       addCircleMarkers(
         data = default_sensor,
         fillOpacity = .8,
@@ -169,23 +175,36 @@ wq_data_server <- function(input, output, session) {
         color = "#2e2e2e",
         fillColor = "#28b62c",
         opacity = 1,
-        group = "default_sensor"
+        group = "default_sensor",
+        popup = "Riviera Sensor",
+        label = "Riviera Sensor"
       ) 
   })
   selected_sensor <- reactive({
-    monitoring_stations %>%
-      filter(station_name == input$sensor_selection_map_marker_click['id'])
+    if (length(input$sensor_selection_map_marker_click['lat']) > 0) {
+      monitoring_stations %>%
+        filter(latitude == input$sensor_selection_map_marker_click['lat'])
+    } else
+      (
+        monitoring_stations %>%
+          filter(station_name == "riviera")
+      )
+    
+    # print(monitoring_stations['station_name'])
   })
 
   # station_data <- reactiveValues(input$sensor_selection_map_marker_click)
-  # observeEvent(input$sensor_selection_map_marker_click, {
-  #  clickedMarker <- input$sensor_selection_map_marker_click
-  #   print(clickedMarker)
+  # observe({
+  #   if(is.null(input$sensor_selection_map_marker_click['id'])){
+  #     print(length(input$sensor_selection_map_marker_click['id']))
+  #   }else{clickedMarker <- input$sensor_selection_map_marker_click
+  #   print(length(clickedMarker))
+  #   }
   # })
   observeEvent(input$sensor_selection_map_marker_click, {
       leafletProxy("sensor_selection_map") %>%
       clearGroup("default_sensor") %>%
-      clearGroup('selected_sensor') %>% 
+      clearGroup('selected_sensor') %>%
       addCircleMarkers(
         data = selected_sensor(),
         fillOpacity = .8,
@@ -219,10 +238,14 @@ wq_data_server <- function(input, output, session) {
   # setView(zoom = 4)
   # })
   selected_station <- reactive({
-    req(input$sensor_selection_map_marker_click)
+    # req(input$sensor_selection_map_marker_click)
     # station_selection <- clickedMarker
     # print(station_selection)
-    if (input$sensor_selection_map_marker_click['id'] == "riviera") {
+    
+      #   #map new wq variable to the variables from api
+      #   #apply function recode to the variables from api using the mapped variables
+      #   #Display the recoded variables as the dropdown menu
+    if (selected_sensor()['station_name'] == "riviera") {
     #   #access api based on station code to find the monitoring variables
       api_riviera_wq <-
         wq_parameters$name[1:8]
@@ -234,29 +257,37 @@ wq_data_server <- function(input, output, session) {
                 list(api_riviera_wq),
                 setNames(edited_riviera_wq, api_riviera_wq)
               ))
-    } else if (input$sensor_selection_map_marker_click['id'] == "oaks") {
+    } else if (selected_sensor()['station_name'] == "oaks") {
       api_oaks_wq <- wq_parameters$name[9:20]
       do.call(recode,
               c(
                 list(api_oaks_wq),
                 setNames(edited_oaks_wq, api_oaks_wq)
               ))
-    }
-  })%>% bindCache(input$sensor_selection_map_marker_click)
+    } 
+    # else{
+    #   api_riviera_wq <-wq_parameters$name[1:8]
+    #   do.call(recode,
+    #           c(
+    #             list(api_riviera_wq),
+    #             setNames(edited_riviera_wq, api_riviera_wq)
+    #           ))
+    # }
+  })
   
   
   
   #create water variable selection ui
   output$water_variable_select_ui <- renderUI({
     #wait for this selection
-    req(input$sensor_selection_map_marker_click)
+    # req(input$sensor_selection_map_marker_click)
     #
     water_variable_choices <-
       selected_station()
     #function returns UI
     selectInput(
       ns("water_variable"),
-      label = h5("Water Quality Value"),
+      label = h5("Water Quality Features"),
       selected = NULL,
       choices = water_variable_choices,
       width = '250px',
@@ -271,7 +302,9 @@ wq_data_server <- function(input, output, session) {
               query_end_date,
               monitoring_station,
               water_variable) {
+      # print(monitoring_stations['station_name'])
       query_end_date <- query_end_date + 1
+      
       if (monitoring_station == "riviera") {
         #create a key value pair where key is the wq variables and values are the api associated id
         riviera_vals <- get_station_parameters(riviera_id)$id[13:20]
@@ -294,7 +327,7 @@ wq_data_server <- function(input, output, session) {
             query_end_date,
             "%2008:00:00"
           )
-      } else {
+      } else if (monitoring_station == "oaks"){
         oaks_vals <- get_station_parameters(oaks_id)$id[13:24]
         names(oaks_vals) <- edited_oaks_wq
         parameter_id <- oaks_vals[water_variable]
@@ -338,16 +371,24 @@ wq_data_server <- function(input, output, session) {
     }
   dataInput <- reactive({
     req(input$water_variable, input$dateRange[1], input$dateRange[2])
-    
-    get_data(
-      input$dateRange[1],
-      input$dateRange[2],
-      input$sensor_selection_map_marker_click,
-      input$water_variable
-    ) %>%
-      mutate("timestamp" = ymd_hms(timestamp) - hours(8),
-             "date" = as.Date(timestamp)) %>%
-      filter(!(value == -179968),!(value == -100000))
+   
+   # if (!is.null(selected_sensor()['station_name'])){
+   #    get_data(input$dateRange[1],
+   #             input$dateRange[2],
+   #             selected_sensor()['station_name'],
+   #             input$water_variable) %>%
+   #      mutate("timestamp" = ymd_hms(timestamp) - hours(8),
+   #             "date" = as.Date(timestamp)) %>%
+   #      filter(!(value == -179968),!(value == -100000))
+   # }else{
+     get_data(input$dateRange[1],
+              input$dateRange[2],
+              selected_sensor()['station_name'],
+              input$water_variable) %>%
+       mutate("timestamp" = ymd_hms(timestamp) - hours(8),
+              "date" = as.Date(timestamp)) %>%
+       filter(!(value == -179968),!(value == -100000))
+    # }
   })
   
   #Visualization
@@ -368,7 +409,7 @@ wq_data_server <- function(input, output, session) {
         "Water",
         input$water_variable,
         "from",
-        str_to_title(input$monitoring_station),
+        str_to_title(selected_sensor()['station_name']),
         "Monitoring Sensor"
       )
     dataInput() %>%
