@@ -14,7 +14,6 @@ library(jsonlite)
 library(dataRetrieval)
 library(shinydashboard)
 
-
 source("modules/fishkill.R")
 source("modules/wq_api.R")
 source("modules/water_quality.R")
@@ -32,7 +31,7 @@ clear_lake_wq <- read_rds("data/clear-lake-water-quality.rds") %>%
   filter(analyte_name %in% c("Dissolved Oxygen", "pH", "Temperature", "Turbidity", "Fluridone", 
                              "Specific Conductance", "SpecificConductivity"))
 clear_lake_wq_choices <- sort(pull(distinct(clear_lake_wq, analyte_name)))
-analyte_descriptions <- read_tsv("data/analyte-descriptions.csv")
+analyte_descriptions <- read_csv("data/analyte-descriptions.csv")
 siteNumber <- "11450000"
 parametercd <- "00065"
 

@@ -1,3 +1,55 @@
+
 .app-controls {
   background-color: #e9e9e9;
 }
+
+/*{      
+  font-family: 'Lato', sans-serif !important;
+  font-size: medium !important;
+}*/
+
+body{
+height: 584px;
+width: 1005px;
+margin: auto 
+}
+
+.datepicker{
+  left: 1200px;
+}
+.dropdown-menu{
+  left: 1200px;
+} 
+.selection{
+    background: #ecefed;
+    padding-left: 10px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-right: 10px;
+}
+
+.wq_graph_label {
+  text-align: center;
+  font-size: small;
+}
+
+.usgs_graph_label{
+  font-size: small;
+}
+
+/*.description{
+  text-align:justify;
+  text-indent:1cm;
+  border-radius:10px";  
+}
+
+/* div.selectize-input{ 
+  font-size: 14px;
+  line-height: 23px;
+}
+
+div.selectize-dropdown { 
+  font-size: 14px; 
+  line-height: 28px; 
+} */
+
