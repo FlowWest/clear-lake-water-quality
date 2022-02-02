@@ -89,8 +89,8 @@ wqdata_ui <- function(id) {
     hover the mouse over the graph to find the value of a specific hour, and
     drag the mouse over the chart to zoom in on the graph.
     The lake elevation graph displays the daily value from the USGS gage when the 
-    date range interval is bigger than three days. The graph displays quarter-hour 
-    value when the date range interval is smaller than three days."
+    date range interval is bigger than two days. The graph displays quarter-hour 
+    value when the date range interval is smaller than two days."
          
   )
   )
@@ -348,7 +348,7 @@ wq_data_server <- function(input, output, session) {
         )
       ) %>%
       layout(
-        title = (list(text = formatted_title, y = 0.97)),
+        # title = (list(text = formatted_title, y = 0.97)),
         xaxis = list(title = 'Date'),
         yaxis = list(title = paste("Water", input$water_variable)),
         hovermode = "closest"

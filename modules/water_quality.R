@@ -11,7 +11,7 @@ historical_data_ui <- function(id) {
     ),
     column(
       width = 3,
-      tags$h3("Water Quality"),
+      tags$h3("Historic Water Quality"),
       tags$p(
         "Use this dashboard to visualize different analytes
                   of interest located in or around the Big Valley Rancheria."
@@ -30,20 +30,15 @@ historical_data_ui <- function(id) {
                    "about_selected_analyte"
                  )))
       )
-    )
-    # column(width = 9,
-    #        plotlyOutput(ns("analyte_plot")),
-    #        dateRangeInput(
-    #          ns('gage_dateRange'),
-    #          label = h5('Date Range Input: YYYY-MM-DD'),
-    #          start = Sys.Date() - 365,
-    #          end = Sys.Date(),
-    #          max = Sys.Date()
-    #        ))
+    ),
+    column(width = 9,
+           plotlyOutput(ns("analyte_plot"))
+           # plotlyOutput(ns("gage_plot2"))
+           )
   )
 }
-# analyte <- c('Dissolved Oxygen', 'Fluridone', 'pH', 'Specific COnductance',
-#              'Specific Conductivity', 'Temperature', 'Turbidity')
+analyte <- c('Dissolved Oxygen', 'Fluridone', 'pH', 'Specific Conductance',
+             'Specific Conductivity', 'Temperature', 'Turbidity')
 # condition <- c(5.0, )
 
 water_quality_server <- function(input, output, session) {
@@ -60,7 +55,7 @@ water_quality_server <- function(input, output, session) {
       group_by(station_code) %>%
       summarise(total = n()) %>% ungroup()
   })
-  
+
   
   output$station_select_ui <- renderUI({
     # wait for this selection explicitly
@@ -88,18 +83,87 @@ water_quality_server <- function(input, output, session) {
       filter(station_code == input$station)
   })
   
-  output$analyte_plot <- renderPlotly({
+  gage_analyte_data <- reactive({
     req(input$station)
-    selected_wq_data_in_station() %>%
+    
+    readNWISdata(
+    sites = "11450000",
+    parameterCd = "00065",
+    service = "dv",
+    startDate = min(as.Date(selected_wq_data_in_station()$sample_datetime)),
+    endDate = max(as.Date(selected_wq_data_in_station()$sample_datetime)),
+    tz = "America/Los_Angeles"
+  ) %>%
+    mutate(dateTime = as.Date(dateTime)) %>%
+    rename("gage_height" = "X_00065_00003") %>% 
+      glimpse()
+  })
+ 
+   # output$gage_plot2 <- renderPlotly({
+     # gage_plot <- 
+     #   gage_analyte_data() %>%
+     #   plot_ly(
+     #    x = ~ dateTime,
+     #    y = ~ gage_height,
+     #    type = 'scatter',
+     #    mode = 'lines',
+     #    hoverinfo = 'text',
+     #    color = "orange",
+     #    text = ~ paste(
+     #      "<br>Date: ",
+     #      as.Date(dateTime),
+     #      paste("<br>Water Level:",gage_height, "ft.")
+     #    )
+     #  ) %>% 
+     #   layout(
+     #     xaxis = list(title = "Date"),  
+     #     yaxis = list(title = "Gage Height"),
+     #     hovermode = "closest"
+     #   )%>%      
+     #   plotly::config(displayModeBar = FALSE) %>%
+     #   plotly::config(showLink = FALSE)
+  # })
+  output$analyte_plot <- renderPlotly({
+     req(input$station)
+    analyte <- selected_wq_data_in_station() %>%
       plot_ly(
         x =  ~ sample_datetime,
         y =  ~ numeric_result,
         type = 'bar'
       ) %>%
       layout(xaxis = list(title = ""),
-             yaxis = list(title = input$analyte)) %>%
+             yaxis = list(title = input$analyte),
+             height = 800,
+             width = 800) %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
+    
+    gage_plot <- 
+      gage_analyte_data() %>%
+      plot_ly(
+        x = ~ dateTime,
+        y = ~ gage_height,
+        type = 'scatter',
+        mode = 'lines',
+        hoverinfo = 'text',
+        color = "orange",
+        text = ~ paste(
+          "<br>Date: ",
+          as.Date(dateTime),
+          paste("<br>Water Level:",gage_height, "ft.")
+        )
+      ) %>% 
+      layout(
+        xaxis = list(title = "Date"),  
+        yaxis = list(title = "Gage Height"),
+        hovermode = "closest",
+        height = 800,
+        width = 800
+      )%>%      
+      plotly::config(displayModeBar = FALSE) %>%
+      plotly::config(showLink = FALSE)
+    
+    subplot(list(analyte, gage_plot),nrows = 2, shareX = TRUE, margin = 0.06)
   })
   
   
@@ -109,19 +173,19 @@ output$about_selected_analyte <- renderUI({
     filter(analyte == input$analyte) %>%
     pull(description)
   
-  # description_img <- analyte_descriptions %>%
-  #   filter(analyte == input$analyte) %>%
-  #   pull(img_url)
-  #
-  # description_cite <- analyte_descriptions %>%
-  #   filter(analyte == input$analyte) %>%
-  #   pull(source_citation)
+  description_img <- analyte_descriptions %>%
+    filter(analyte == input$analyte) %>%
+    pull(img_url)
+
+  description_cite <- analyte_descriptions %>%
+    filter(analyte == input$analyte) %>%
+    pull(source_citation)
   
   tagList(tags$h4(input$analyte),
           tags$p(paste(description)))
-          # actionLink(ns("analyte_image_link"),
-          #            href = "#", label = tags$img(src = paste(description_img), width = "400px")),
-          # helpText(paste("source:", description_cite)))
+          actionLink(ns("analyte_image_link"),
+                     href = "#", label = tags$img(src = paste(description_img), width = "400px"))
+          helpText(paste("source:", description_cite))
           
 })
   
