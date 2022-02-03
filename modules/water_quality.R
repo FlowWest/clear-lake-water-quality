@@ -32,12 +32,12 @@ historical_data_ui <- function(id) {
       )
     ),
     column(width = 9,
-           plotlyOutput(ns("analyte_plot"))
+           plotlyOutput(ns("analyte_gage_plot"))
            # plotlyOutput(ns("gage_plot2"))
            )
   )
 }
-analyte <- c('Dissolved Oxygen', 'Fluridone', 'pH', 'Specific Conductance',
+analyte <- c('Dissolved Oxygen', 'Fluridone', 'pH', 'SpecificConductance',
              'Specific Conductivity', 'Temperature', 'Turbidity')
 # condition <- c(5.0, )
 
@@ -95,46 +95,44 @@ water_quality_server <- function(input, output, session) {
     tz = "America/Los_Angeles"
   ) %>%
     mutate(dateTime = as.Date(dateTime)) %>%
-    rename("gage_height" = "X_00065_00003") %>% 
-      glimpse()
+    rename("gage_height" = "X_00065_00003")
   })
  
-   # output$gage_plot2 <- renderPlotly({
-     # gage_plot <- 
-     #   gage_analyte_data() %>%
-     #   plot_ly(
-     #    x = ~ dateTime,
-     #    y = ~ gage_height,
-     #    type = 'scatter',
-     #    mode = 'lines',
-     #    hoverinfo = 'text',
-     #    color = "orange",
-     #    text = ~ paste(
-     #      "<br>Date: ",
-     #      as.Date(dateTime),
-     #      paste("<br>Water Level:",gage_height, "ft.")
-     #    )
-     #  ) %>% 
-     #   layout(
-     #     xaxis = list(title = "Date"),  
-     #     yaxis = list(title = "Gage Height"),
-     #     hovermode = "closest"
-     #   )%>%      
-     #   plotly::config(displayModeBar = FALSE) %>%
-     #   plotly::config(showLink = FALSE)
-  # })
-  output$analyte_plot <- renderPlotly({
+  output$analyte_gage_plot <- renderPlotly({
      req(input$station)
-    analyte <- selected_wq_data_in_station() %>%
+    unit <- selected_wq_data() %>% 
+      pull(unit)
+    analyte_plot <- selected_wq_data_in_station() %>%
       plot_ly(
         x =  ~ sample_datetime,
         y =  ~ numeric_result,
-        type = 'bar'
+        type = 'bar',
+        hoverinfo = 'text',
+        text = ~ paste(
+          "<br>Date: ",
+          as.Date(sample_datetime),
+          paste("<br>", input$analyte, ":", numeric_result, unit)
+          )
       ) %>%
-      layout(xaxis = list(title = ""),
+      layout(xaxis = list(title = ~ sample_datetime),
              yaxis = list(title = input$analyte),
              height = 800,
-             width = 800) %>%
+             width = 800,
+             hovermode = "closest",
+             showlegend = FALSE
+             ) %>%
+      add_annotations(
+        text = "Historic Water Quality Features",
+        x = 0,
+        y = 1,
+        yref = "paper",
+        xref = "paper",
+        xanchor = "left",
+        yanchor = "top",
+        yshift = 30,
+        showarrow = FALSE,
+        font = list(size = 18)
+      ) %>% 
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
     
@@ -147,10 +145,10 @@ water_quality_server <- function(input, output, session) {
         mode = 'lines',
         hoverinfo = 'text',
         color = "orange",
-        text = ~ paste(
+        text = ~ paste0(
           "<br>Date: ",
           as.Date(dateTime),
-          paste("<br>Water Level:",gage_height, "ft.")
+          paste0("<br>Water Level:",gage_height, "ft.")
         )
       ) %>% 
       layout(
@@ -158,12 +156,26 @@ water_quality_server <- function(input, output, session) {
         yaxis = list(title = "Gage Height"),
         hovermode = "closest",
         height = 800,
-        width = 800
-      )%>%      
+        width = 800,
+        showlegend = FALSE
+      )%>%
+      add_annotations(
+        text = "Historic Lake Elevation",
+        x = 0,
+        y = 1,
+        yref = "paper",
+        xref = "paper",
+        xanchor = "left",
+        yanchor = "top",
+        yshift = 20,
+        showarrow = FALSE,
+        font = list(size = 18)
+      ) %>% 
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
     
-    subplot(list(analyte, gage_plot),nrows = 2, shareX = TRUE, margin = 0.06)
+
+    subplot(list(analyte_plot, gage_plot),nrows = 2, shareX = TRUE, margin = 0.06, titleY = TRUE, titleX = TRUE)
   })
   
   
