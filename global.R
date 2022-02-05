@@ -30,7 +30,7 @@ clear_lake_stations <- read_rds("data/clear-lake-stations.rds")
 #TODO: have not consolidated usgs and dwr data into clear lake data
 clear_lake_wq <- read_rds("data/clear-lake-analyte-data.rds") %>% 
   filter(analyte_name %in% c("Dissolved Oxygen", "pH", "Temperature", "Turbidity", "Fluridone", 
-                             "Specific Conductance", "SpecificConductivity"))
+                             "Specific Conductance", "Specific Conductivity"))
 clear_lake_wq_choices <- sort(pull(distinct(clear_lake_wq, analyte_name)))
 analyte_descriptions <- read_csv("data/analyte-descriptions.csv")
 siteNumber <- "11450000"
