@@ -1,6 +1,7 @@
 
 
 
+
 #function to create ui - it need id to represent server id objects
 #user interface section
 #name space needs to be different for each inidivudal user interface element
@@ -12,67 +13,78 @@
 wqdata_ui <- function(id) {
   ns <- NS(id)
   
-
+  
   tagList(
     tags$head(
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
     ),
     tags$h3("Realtime Monitoring"),
-    tags$div("Select a monitoring location using the map, water quality feature 
-             from the drop down, and date range below to update the chart"),
-    br(),
-
-    fluidRow(class = "selection",
-      column(width = 4,
-             leafletOutput(ns(
-               "sensor_selection_map"
-             ), height = 150)),
-    column(width = 4,
-             uiOutput(ns(
-               "water_variable_select_ui"
-             ))),
-      column(class = "date_range",
+    tags$div(
+      class = "well",
+      "Select a monitoring location using the map, water quality feature
+              from the drop down, and date range below to update the chart"
+    ),
+    tags$div(class = "well",
+             fluidRow(
+               column(width = 4,
+                      leafletOutput(ns(
+                        "sensor_selection_map"
+                      ), height = 150)),
+               column(width = 4,
+                      uiOutput(ns(
+                        "water_variable_select_ui"
+                      ))),
+               column(
+                 class = "date_range",
+                 width = 4,
+                 dateRangeInput(
+                   ns('dateRange'),
+                   label = h5('Date Range Input: YYYY-MM-DD'),
+                   start = Sys.Date() - 7,
+                   end = Sys.Date(),
+                   min = Sys.Date() - 90,
+                   max = Sys.Date()
+                 )
+               )
+             )),
+    
+    fluidRow(column(
+      width = 12,
+      column(
+        width = 8,
+        plotlyOutput(ns("wq_plot")),
+        tags$div(
+          class = "wq_graph_label",
+          "Data Source: hourly water quality data from",
+          tags$a("WQData Live API",
+                 href = "https://wqdatalive.com/",
+                 target = "_blank")
+        )
+      ),
+      column(
         width = 4,
-        dateRangeInput(
-          ns('dateRange'),
-          label = h5('Date Range Input: YYYY-MM-DD'),
-          start = Sys.Date() - 7,
-          end = Sys.Date(),
-          min = Sys.Date() - 90,
-          max = Sys.Date()
+        fluidRow(valueBoxOutput(ns("gage_height"), width = 12)),
+        fluidRow(
+          plotlyOutput(ns("gage_plot"),
+                       height = "200px"),
+          tags$div(
+            class = "usgs_graph_label",
+            "Data Source: lake elevation data from",
+            tags$a(
+              "USGS Clear Lake Gage at Lakeport.",
+              href = "https://waterdata.usgs.gov/monitoring-location/11450000/",
+              target = "_blank"
+            )
+            
+          )
         )
       )
-    ), 
-    
-    br(),
-    
-    fluidRow(
-      column(width = 12,
-        column(width = 8, plotlyOutput(ns("wq_plot")),
-               tags$div(class ="wq_graph_label", "Data Source: hourly water quality data from",
-                        tags$a("WQData Live API",
-                               href = "https://wqdatalive.com/",
-                               target = "_blank"))),
-        column(width = 4,
-             fluidRow(
-                    valueBoxOutput(ns(
-               "gage_height"
-             ), width = 12)),
-             fluidRow(plotlyOutput(
-               ns("gage_plot"),
-               height = "200px"
-             ),
-             tags$div(class = "usgs_graph_label", "Data Source: lake elevation data from",
-                      tags$a("USGS Clear Lake Gage at Lakeport.", 
-                             href="https://waterdata.usgs.gov/monitoring-location/11450000/", 
-                             target = "_blank")
-
-                      )))
     )),
     
-  br(),
-  tags$p(class = "description",
-    "Clear Lake is a natural freshwater lake in Lake County in
+    br(),
+    tags$p(
+      class = "description",
+      "Clear Lake is a natural freshwater lake in Lake County in
     the U.S. state of California, north of Napa County and
     San Francisco. It is the largest natural freshwater lake
     wholly within the state, with 68 square miles (180 square kilometers) of
@@ -82,17 +94,18 @@ wqdata_ui <- function(id) {
     least 2,500,000 years.[3] The data for Clear Lake is collected from two sensors,
     one on the west side of Clear Lake (Riviera West), and another on the east side of
     Clear Lake (Clearlake Oaks)."
-  ),
-  tags$p(class = "description",
-    "The dashboard visualizes the hourly data of interest from WQData Live
+    ),
+    tags$p(
+      class = "description",
+      "The dashboard visualizes the hourly data of interest from WQData Live
     for the past 90 days. Use the pull-down menu to visualize the data,
     hover the mouse over the graph to find the value of a specific hour, and
     drag the mouse over the chart to zoom in on the graph.
-    The lake elevation graph displays the daily value from the USGS gage when the 
-    date range interval is bigger than two days. The graph displays quarter-hour 
+    The lake elevation graph displays the daily value from the USGS gage when the
+    date range interval is bigger than two days. The graph displays quarter-hour
     value when the date range interval is smaller than two days."
-         
-  )
+      
+    )
   )
   
 }
@@ -105,12 +118,12 @@ wq_data_server <- function(input, output, session) {
   #same as function
   # temperature <- c("Surface Temperature (°F)", "Lake Bed Temperature (°F)")
   
-  default_sensor <- monitoring_stations %>% 
+  default_sensor <- monitoring_stations %>%
     filter(station_name == "riviera")
   api_sensors <- monitoring_stations %>%
     filter(station_name != "usgs_gage")
-
-  output$sensor_selection_map <-renderLeaflet({
+  
+  output$sensor_selection_map <- renderLeaflet({
     leaflet() %>%
       addProviderTiles(providers$OpenStreetMap) %>%
       addCircleMarkers(
@@ -127,7 +140,7 @@ wq_data_server <- function(input, output, session) {
       ) %>%
       setView(lng = -122.708927,
               lat = 39.012078,
-              zoom = 11) %>% 
+              zoom = 11) %>%
       addCircleMarkers(
         data = default_sensor,
         fillOpacity = .8,
@@ -138,24 +151,22 @@ wq_data_server <- function(input, output, session) {
         group = "default_sensor",
         popup = "Riviera Sensor",
         label = "Riviera Sensor"
-      ) 
+      )
   })
   selected_sensor <- reactive({
     if (length(input$sensor_selection_map_marker_click['lat']) > 0) {
       monitoring_stations %>%
         filter(latitude == input$sensor_selection_map_marker_click['lat'])
     } else
-      (
-        monitoring_stations %>%
-          filter(station_name == "riviera")
-      )
+      (monitoring_stations %>%
+         filter(station_name == "riviera"))
     
     # print(monitoring_stations['station_name'])
   }) %>% bindCache(input$sensor_selection_map_marker_click['lat'])
-
-
+  
+  
   observeEvent(input$sensor_selection_map_marker_click, {
-      leafletProxy("sensor_selection_map") %>%
+    leafletProxy("sensor_selection_map") %>%
       clearGroup("default_sensor") %>%
       clearGroup('selected_sensor') %>%
       addCircleMarkers(
@@ -167,26 +178,26 @@ wq_data_server <- function(input, output, session) {
         opacity = 1,
         group = "selected_sensor"
       )
-      
-
-    # setView(zoom = 4)
-    })
     
-  selected_station <- reactive({
+    
+    # setView(zoom = 4)
+  })
+  
+  selected_sensor_choices <- reactive({
     # req(input$sensor_selection_map_marker_click)
     # station_selection <- clickedMarker
     # print(station_selection)
     
-      #   #map new wq variable to the variables from api
-      #   #apply function recode to the variables from api using the mapped variables
-      #   #Display the recoded variables as the dropdown menu
-    if (selected_sensor()['station_name'] == "riviera") {
-    #   #access api based on station code to find the monitoring variables
-      api_riviera_wq <-
-        wq_parameters$name[1:8]
     #   #map new wq variable to the variables from api
     #   #apply function recode to the variables from api using the mapped variables
     #   #Display the recoded variables as the dropdown menu
+    if (selected_sensor()['station_name'] == "riviera") {
+      #   #access api based on station code to find the monitoring variables
+      api_riviera_wq <-
+        wq_parameters$name[1:8]
+      #   #map new wq variable to the variables from api
+      #   #apply function recode to the variables from api using the mapped variables
+      #   #Display the recoded variables as the dropdown menu
       do.call(recode,
               c(
                 list(api_riviera_wq),
@@ -199,7 +210,7 @@ wq_data_server <- function(input, output, session) {
                 list(api_oaks_wq),
                 setNames(edited_oaks_wq, api_oaks_wq)
               ))
-    } 
+    }
   })
   
   
@@ -210,7 +221,7 @@ wq_data_server <- function(input, output, session) {
     # req(input$sensor_selection_map_marker_click)
     #
     water_variable_choices <-
-      selected_station()
+      selected_sensor_choices()
     #function returns UI
     selectInput(
       ns("water_variable"),
@@ -254,7 +265,7 @@ wq_data_server <- function(input, output, session) {
             query_end_date,
             "%2008:00:00"
           )
-      } else if (monitoring_station == "oaks"){
+      } else if (monitoring_station == "oaks") {
         oaks_vals <- get_station_parameters(oaks_id)$id[13:24]
         names(oaks_vals) <- edited_oaks_wq
         parameter_id <- oaks_vals[water_variable]
@@ -298,14 +309,14 @@ wq_data_server <- function(input, output, session) {
     }
   dataInput <- reactive({
     req(input$water_variable, input$dateRange[1], input$dateRange[2])
-   
-     get_data(input$dateRange[1],
-              input$dateRange[2],
-              selected_sensor()['station_name'],
-              input$water_variable) %>%
-       mutate("timestamp" = ymd_hms(timestamp) - hours(8),
-              "date" = as.Date(timestamp)) %>%
-       filter(!(value == -179968),!(value == -100000))
+    
+    get_data(input$dateRange[1],
+             input$dateRange[2],
+             selected_sensor()['station_name'],
+             input$water_variable) %>%
+      mutate("timestamp" = ymd_hms(timestamp) - hours(8),
+             "date" = as.Date(timestamp)) %>%
+      filter(!(value == -179968), !(value == -100000))
     # }
   })
   
@@ -356,7 +367,7 @@ wq_data_server <- function(input, output, session) {
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
   }) %>% bindCache(input$dateRange[1], input$dateRange[2], input$water_variable)
- 
+  
   data_gage_Input <- reactive({
     req(input$dateRange[1], input$dateRange[2])
     
@@ -372,7 +383,7 @@ wq_data_server <- function(input, output, session) {
         tz = "America/Los_Angeles"
       ) %>%
         mutate(dateTime = as.Date(dateTime)) %>%
-        rename("gage_height" = "X_00065_00003")  
+        rename("gage_height" = "X_00065_00003")
     } else{
       readNWISdata(
         sites = "11450000",
@@ -386,42 +397,42 @@ wq_data_server <- function(input, output, session) {
         rename("gage_height" = "X_00065_00000")
     }
   })
- 
+  
   output$gage_height <- renderValueBox({
     most_recent_value <- data_gage_Input() %>%
       pull(gage_height) %>%
       last()
-    valueBox(
-      value = tags$p(paste("Current Water Level:", most_recent_value, " ft."),
-                     style = "font-size: 65%"),
-      subtitle = NULL
-      )
+    valueBox(value = tags$p(
+      paste("Current Water Level:", most_recent_value, " ft."),
+      style = "font-size: 65%"
+    ),
+    subtitle = NULL)
   })
   
   output$gage_plot <- renderPlotly({
     data_gage_Input() %>%
-        plot_ly(
-          x = ~ dateTime,
-          y = ~ gage_height,
-          type = 'scatter',
-          mode = 'lines',
-          hoverinfo = 'text',
-          color = "orange",
-          text = ~ paste(
-            "<br>Time: ",
-            paste(format(dateTime, format = "%H:%M"), "PST"),
-            "<br>Date: ",
-            as.Date(dateTime),
-           paste("<br>Water Level:",gage_height, "ft.")
-          )
-          ) %>% 
-        layout(
-          xaxis = list(title = "Date"),  
-          yaxis = list(title = "Gage Height"),
-          hovermode = "closest"
-          )%>%
+      plot_ly(
+        x = ~ dateTime,
+        y = ~ gage_height,
+        type = 'scatter',
+        mode = 'lines',
+        hoverinfo = 'text',
+        color = "orange",
+        text = ~ paste(
+          "<br>Time: ",
+          paste(format(dateTime, format = "%H:%M"), "PST"),
+          "<br>Date: ",
+          as.Date(dateTime),
+          paste("<br>Water Level:", gage_height, "ft.")
+        )
+      ) %>%
+      layout(
+        xaxis = list(title = "Date"),
+        yaxis = list(title = "Gage Height"),
+        hovermode = "closest"
+      ) %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
-
+    
   })
 }

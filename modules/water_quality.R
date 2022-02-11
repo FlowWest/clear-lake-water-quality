@@ -18,18 +18,19 @@ historical_data_ui <- function(id) {
       ),
       selectInput(ns("analyte"), "Select analyte",
                   choices = clear_lake_wq_choices),
-      uiOutput(ns("station_select_ui")),
-      #server insert ui for us
-      tags$hr(),
-      tabsetPanel(
-        type = "pills",
-        tabPanel("Sampling Location Map",
-                 leafletOutput(ns("station_map")),),
-        tabPanel("Analyte Details",
-                 uiOutput(ns(
-                   "about_selected_analyte"
-                 )))
-      )
+      leafletOutput(ns("station_selection_map"))
+      # uiOutput(ns("station_select_ui")),
+      # #server insert ui for us
+      # tags$hr(),
+      # tabsetPanel(
+      #   type = "pills",
+      #   tabPanel("Sampling Location Map",
+      #            leafletOutput(ns("station_map")),),
+      #   tabPanel("Analyte Details",
+      #            uiOutput(ns(
+      #              "about_selected_analyte"
+      #            )))
+      # )
     ),
     column(width = 9,
            plotlyOutput(ns("analyte_gage_plot"))
@@ -45,47 +46,98 @@ water_quality_server <- function(input, output, session) {
   ns <- session$ns
   
   selected_wq_data <- reactive({
+    req(input$analyte)
     clear_lake_wq %>%
       filter(analyte_name == input$analyte,!is.na(numeric_result))
+  }) %>% bindCache(input$analyte)
+  
+  # clear_lake_wq <- reactive({
+  #   clear_lake_wq %>% filter(station_code %in% selected_wq_data()$station_code)
+  # })
+  # # 
+  # default_station <- reactive({
+    # print(selected_wq_data())
+  #   # default <- selected_wq_data()[1,]
+  # 
+  # })
+    # clear_lake_wq %>%
+    # filter(station_code == "state_park_100_meters")
+  # api_sensors <- monitoring_stations %>%
+  #   filter(station_name != "usgs_gage")
+  
+  output$station_selection_map <-renderLeaflet({
+    leaflet(data = selected_wq_data()) %>%
+      addProviderTiles(providers$OpenStreetMap) %>%
+      addCircleMarkers(
+        ~selected_wq_data()$longitude,
+        ~selected_wq_data()$latitude,
+        layerId = selected_wq_data()$station_code,
+        radius = 6,
+        fillOpacity = .4,
+        weight = 2,
+        color = "#2e2e2e",
+        fillColor = "#555555",
+        opacity = .4,
+        # popup = paste(str_to_title(selected_wq_data()$station_name), "Sensor"),
+        label = paste(str_to_title(selected_wq_data()$station_name), "Sensor")
+      )
+    # %>%
+      # setView(lng = -122.708927,
+      #         lat = 39.012078,
+      #         zoom = 8)%>%
+      # addCircleMarkers(
+      # data = default_station,
+      # ~default_station$longitude,
+      # ~default_station$latitude,
+      # fillOpacity = .8,
+      # weight = 2,
+      # color = "#2e2e2e",
+      # fillColor = "#28b62c",
+      # opacity = 1,
+      # group = "default_station"
+      # popup = "state_park_100_meters",
+      # label = "state_park_100_meters"
+    # )
   })
   
-  #group station by code, calculate total obs for selected analyte
-  abundance_by_station <- reactive({
-    selected_wq_data() %>%
-      group_by(station_code) %>%
-      summarise(total = n()) %>% ungroup()
-  })
+  selected_station <- reactive({
+    if (length(input$station_selection_map_marker_click['lat']) > 0) {
+      selected_wq_data() %>%
+        filter(latitude == input$station_selection_map_marker_click['lat'])
+    } 
+    else
+      (
+        selected_wq_data() %>%
+          filter(station_name == default_station()$station_name)
+      )
+  }) %>% bindCache(input$station_selection_map_marker_click) 
+  
+  
+  observeEvent(input$station_selection_map_marker_click, {
+    leafletProxy("station_selection_map") %>%
+      clearGroup('selected_station') %>%
+      addCircleMarkers(
+        data = selected_station(),
+        fillOpacity = .8,
+        weight = 2,
+        color = "#2e2e2e",
+        fillColor = "#28b62c",
+        opacity = 1,
+        group = "selected_station"
+      )
 
-
-  output$station_select_ui <- renderUI({
-    # wait for this selection explicitly
-    req(input$analyte)
-
-    station_choices <-
-      abundance_by_station() %>%
-      arrange(desc(total))
-    #function returns UI
-    pickerInput(
-      inputId = ns("station"),
-      label = "Select Sampling Location",
-      choices = station_choices$station_code,
-      multiple = FALSE,
-      choicesOpt = list(subtext = paste(
-        " observations",
-        station_choices$total,
-        sep = ": "
-      ))
-    )
   })
 #   
   selected_wq_data_in_station <- reactive({
-    selected_wq_data() %>%
-      filter(station_code == input$station)
-  })
-#   
-  gage_analyte_data <- reactive({
-    req(input$station)
+    # req(input$analyte, input$station_selection_map_marker_click)
 
+    selected_wq_data() %>%
+      filter(station_code == input$station_selection_map_marker_click['id'])
+    }) 
+
+  gage_analyte_data <- reactive({
+    req(input$station_selection_map_marker_click)
+    # print(selected_wq_data_in_station())
     readNWISdata(
     sites = "11450000",
     parameterCd = "00065",
@@ -96,10 +148,10 @@ water_quality_server <- function(input, output, session) {
   ) %>%
     mutate(dateTime = as.Date(dateTime)) %>%
     rename("gage_height" = "X_00065_00003")
-  }) %>% bindCache(input$station)
+  }) %>% bindCache(input$station_selection_map_marker_click)
 #  
   output$analyte_gage_plot <- renderPlotly({
-     req(input$station)
+     req(input$station_selection_map_marker_click)
     
     unit <- selected_wq_data() %>%
       pull(unit)
@@ -118,14 +170,14 @@ water_quality_server <- function(input, output, session) {
         # tooltip = "text"
       ) %>%
       layout(xaxis = list(title = ~ sample_datetime),
-             yaxis = list(title = input$analyte),
+             yaxis = list(title = selected_wq_data_in_station()$unit[1]),
              height = 800,
              width = 800,
              hovermode = "x",
              showlegend = FALSE
              ) %>%
       add_annotations(
-        text = "Historic Water Quality Features",
+        text = paste(input$analyte),
         x = 0,
         y = 1,
         yref = "paper",
@@ -156,14 +208,14 @@ water_quality_server <- function(input, output, session) {
       ) %>%
       layout(
         xaxis = list(title = "Date"),
-        yaxis = list(title = "Gage Height"),
+        yaxis = list(title = "Feet"),
         hovermode = "x unified",
         height = 800,
         width = 800,
         showlegend = FALSE
       )%>%
       add_annotations(
-        text = "Historic Lake Elevation",
+        text = "Lake Elevation",
         x = 0,
         y = 1,
         yref = "paper",
@@ -180,6 +232,7 @@ water_quality_server <- function(input, output, session) {
 
     subplot(list(analyte_plot, gage_plot),nrows = 2, shareX = TRUE, margin = 0.06, titleY = TRUE, titleX = TRUE)
   })
+}
 #   
 #   
 # 
@@ -216,40 +269,40 @@ water_quality_server <- function(input, output, session) {
   #   ))
   # })
 # #   
-  selected_station_map_marker <- reactive({
-    clear_lake_stations %>%
-      filter(station_code == input$station)
-  })
-# 
-  output$station_map <- renderLeaflet({
-    leaflet() %>%
-      addProviderTiles(providers$Esri.WorldTopoMap) %>%
-      addCircleMarkers(
-        data = clear_lake_stations,
-        radius = 4,
-        fillOpacity = .4,
-        weight = 2,
-        color = "#2e2e2e",
-        fillColor = "#555555",
-        opacity = .4,
-        label = ~ station_code
-      )
-  })
-# #   # 
-  observeEvent(input$station, {
-    leafletProxy("station_map") %>%
-      clearGroup("selected_station") %>%
-      addCircleMarkers(
-        data = selected_station_map_marker(),
-        fillOpacity = .8,
-        weight = 2,
-        color = "#2e2e2e",
-        fillColor = "#28b62c",
-        opacity = 1,
-        label = ~ station_code,
-        group = "selected_station"
-      )
-  })
-}
+#   selected_station_map_marker <- reactive({
+#     clear_lake_wq %>%
+#       filter(station_code == input$station)
+#   })
+# # 
+#   output$station_map <- renderLeaflet({
+#     leaflet() %>%
+#       addProviderTiles(providers$Esri.WorldTopoMap) %>%
+#       addCircleMarkers(
+#         data = clear_lake_wq,
+#         radius = 4,
+#         fillOpacity = .4,
+#         weight = 2,
+#         color = "#2e2e2e",
+#         fillColor = "#555555",
+#         opacity = .4,
+#         label = ~ station_code
+#       )
+#   })
+# # #   # 
+#   observeEvent(input$station, {
+#     leafletProxy("station_map") %>%
+#       clearGroup("selected_station") %>%
+#       addCircleMarkers(
+#         data = selected_station_map_marker(),
+#         fillOpacity = .8,
+#         weight = 2,
+#         color = "#2e2e2e",
+#         fillColor = "#28b62c",
+#         opacity = 1,
+#         label = ~ station_code,
+#         group = "selected_station"
+#       )
+  # })
+
   
   
