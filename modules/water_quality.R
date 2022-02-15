@@ -51,19 +51,16 @@ water_quality_server <- function(input, output, session) {
       filter(analyte_name == input$analyte,!is.na(numeric_result))
   }) %>% bindCache(input$analyte)
   
-  # clear_lake_wq <- reactive({
-  #   clear_lake_wq %>% filter(station_code %in% selected_wq_data()$station_code)
-  # })
-  # # 
+ 
   # default_station <- reactive({
-    # print(selected_wq_data())
-  #   # default <- selected_wq_data()[1,]
-  # 
+  #   req(input$analyte)
+  #   selected_wq_data() %>%
+  #     as_tibble(selected_wq_data) %>% 
+  #     slice(1) %>% 
+  #     unlist(., use.name = TRUE)
+  # # 
   # })
-    # clear_lake_wq %>%
-    # filter(station_code == "state_park_100_meters")
-  # api_sensors <- monitoring_stations %>%
-  #   filter(station_name != "usgs_gage")
+
   
   output$station_selection_map <-renderLeaflet({
     leaflet(data = selected_wq_data()) %>%
@@ -82,21 +79,19 @@ water_quality_server <- function(input, output, session) {
         label = paste(str_to_title(selected_wq_data()$station_name), "Sensor")
       )
     # %>%
-      # setView(lng = -122.708927,
-      #         lat = 39.012078,
-      #         zoom = 8)%>%
-      # addCircleMarkers(
-      # data = default_station,
-      # ~default_station$longitude,
-      # ~default_station$latitude,
-      # fillOpacity = .8,
-      # weight = 2,
-      # color = "#2e2e2e",
-      # fillColor = "#28b62c",
-      # opacity = 1,
-      # group = "default_station"
-      # popup = "state_park_100_meters",
-      # label = "state_park_100_meters"
+    # setView(lng = -122.708927,
+    #         lat = 39.012078,
+    #         zoom = 8)%>%
+    # addCircleMarkers(
+    # data = default_station,
+    # ~default_station$longitude,
+    # ~default_station$latitude,
+    # fillOpacity = .8,
+    # weight = 2,
+    # color = "#2e2e2e",
+    # fillColor = "#28b62c",
+    # opacity = 1,
+    # group = "default_station"
     # )
   })
   
@@ -115,6 +110,7 @@ water_quality_server <- function(input, output, session) {
   
   observeEvent(input$station_selection_map_marker_click, {
     leafletProxy("station_selection_map") %>%
+      clearGroup("default_sensor") %>%
       clearGroup('selected_station') %>%
       addCircleMarkers(
         data = selected_station(),
@@ -151,7 +147,11 @@ water_quality_server <- function(input, output, session) {
   }) %>% bindCache(input$station_selection_map_marker_click)
 #  
   output$analyte_gage_plot <- renderPlotly({
-     req(input$station_selection_map_marker_click)
+    req(input$station_selection_map_marker_click)
+    
+    shiny::validate(
+      need(nrow(selected_wq_data_in_station()) > 0, "Selection yielded no results"))
+    # print(nrow(selected_wq_data_in_station()))
     
     unit <- selected_wq_data() %>%
       pull(unit)
