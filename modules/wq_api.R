@@ -19,13 +19,17 @@ wqdata_ui <- function(id) {
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
     ),
     tags$h3("Realtime Monitoring"),
-    tags$div(
-      class = "well",
-      "Select a monitoring location using the map, water quality feature
-              from the drop down, and date range below to update the chart"
-    ),
+    # tags$div(
+    #   class = "well",
+    #   "Select a monitoring location using the map, water quality feature
+    #           from the drop down, and date range below to update the chart"
+    # ),
     tags$div(class = "well",
              fluidRow(
+               column(width  = 12, 
+               "Select a monitoring location using the map, water quality feature
+              from the drop down, and date range below to update the chart"),
+               tags$br(),
                column(width = 4,
                       leafletOutput(ns(
                         "sensor_selection_map"
@@ -362,7 +366,7 @@ wq_data_server <- function(input, output, session) {
         # title = (list(text = formatted_title, y = 0.97)),
         xaxis = list(title = 'Date'),
         yaxis = list(title = paste("Water", input$water_variable)),
-        hovermode = "closest"
+        hovermode = "x"
       ) %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
@@ -429,7 +433,7 @@ wq_data_server <- function(input, output, session) {
       layout(
         xaxis = list(title = "Date"),
         yaxis = list(title = "Gage Height"),
-        hovermode = "closest"
+        hovermode = "x"
       ) %>%
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)

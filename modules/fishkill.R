@@ -11,12 +11,9 @@ fishkill_ui <- function(id) {
         )
       ),
     column(width = 4, 
-           tags$h3("Fish Kills"),
-           tags$p("This page shows fish kill data in Clear Lake California.  
-                  This data comes from a citizen science iNaturalist project. Elevation data
-                  used is obtained from the USGS water data service using", 
-                  tags$a("Clear Lake at Lakeport (11450000)", href="https://waterdata.usgs.gov/ca/nwis/uv?11450000", 
-                         target = "_blank")),
+           tags$h3("Fish Mortality"),
+           tags$p("This page shows fish kill data in Clear Lake, California.  
+                  The data comes from a citizen science iNaturalist project."),
            tags$h4("How to Use"), 
            tags$p("Use this dashboard to visualize fish kill sites 
                   in or around the Big Valley Rancheria. Hover over a 
@@ -25,10 +22,11 @@ fishkill_ui <- function(id) {
                   additional information and click the View at iNaturalist link to view origional record."),
            "Use", 
            tags$a(href = "https://www.inaturalist.org/projects/clear-lake-fish-kill-monitoring-project?tab=observations", "iNaturalist"), 
-           "to record and view Fish Kills.",
-           tags$p("Step by step instruction on reporting Fish Kills on Clear Lake with iNaturalist, can be found", 
+           "to record and view Fish Kills. Step by step instruction on reporting Fish Kills on Clear Lake with iNaturalist, can be found", 
                   tags$a("here", href="Reporting fish kills with iNaturalist 2021 V1B.pdf", 
-                         target = "_blank")),
+                         target = "_blank"),
+           tags$h4("Data Download"),
+           downloadButton(ns('download'), "Download Data Summary CSV")
            # tags$h4("Relevent Events Nearby"),
            # tags$hr()),
            # tabsetPanel(
@@ -41,15 +39,15 @@ fishkill_ui <- function(id) {
              #   "Real Time Monitoring",
              #   plotlyOutput(ns("monitoring_plot")))
            # ),
-           tags$hr()),
+           ),
     column(width = 8,
-           leafletOutput(ns("fish_kills_map"), width = "100%", height = 700),
+           leafletOutput(ns("fish_kills_map"), width = "100%", height = 700)
            # tags$h4("Data Summary"),
-            tags$br(),
-           downloadButton(ns('download'), "Download Data Summary CSV"),
+            # tags$br()
            # DT::dataTableOutput(ns("summary_table")), 
-           tags$br(),
-           tags$br())
+           # tags$br(),
+           # tags$br()
+           )
   
 )
 }
@@ -91,8 +89,9 @@ fishkill_server <- function(input, output, session) {
                        fillColor = ~pal(is_recent),
                        weight = 4.5,
                        opacity =  1, 
-                       fillOpacity = ~ifelse(is_recent == "recent observation (15 days)", 3, .5), 
-                       labelOptions = labelOptions(style = list("font-size" = "20px"))) %>% 
+                       fillOpacity = ~ifelse(is_recent == "recent observation (15 days)", 3, .5) 
+                       # labelOptions = labelOptions(style = list("font-size" = "20px"))
+                       ) %>% 
       leaflet::addLegend("bottomright", pal = pal, values = ~is_recent,
                 title = "Observation type",
                 opacity = 1

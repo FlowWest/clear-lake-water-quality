@@ -9,16 +9,42 @@ historical_data_ui <- function(id) {
       margin: auto;
           }")
     ),
-    column(
-      width = 3,
-      tags$h3("Historic Water Quality"),
-      tags$p(
-        "Use this dashboard to visualize different analytes
-                  of interest located in or around the Big Valley Rancheria."
-      ),
-      selectInput(ns("analyte"), "Select analyte",
-                  choices = clear_lake_wq_choices),
-      leafletOutput(ns("station_selection_map"))
+    tags$h3("Historic Water Quality"),
+    tags$div(class = "well",
+               fluidRow(
+                 column(width  = 12, 
+                        "Select a  water quality feature
+              from the drop down, and a monitoring station to update the chart"),
+                 tags$br(),
+                 column(width = 5,
+                        selectInput(ns("analyte"), h5("Water Quality Features"),
+                                    choices = clear_lake_wq_choices)),
+                 tags$br(),
+                 column(width = 7,
+                        leafletOutput(ns(
+                          "station_selection_map"
+                        ), height = 150)),
+
+                 # column(
+                 #   class = "date_range",
+                 #   width = 4,
+                 #   dateRangeInput(
+                 #     ns('dateRange'),
+                 #     label = h5('Date Range Input: YYYY-MM-DD'),
+                 #     start = Sys.Date() - 7,
+                 #     end = Sys.Date(),
+                 #     min = Sys.Date() - 90,
+                 #     max = Sys.Date()
+                 #   )
+                 # )
+               )),
+      # tags$p(
+      #   "Use this dashboard to visualize different analytes
+      #             of interest located in or around the Big Valley Rancheria."
+      # ),
+      # selectInput(ns("analyte"), "Select analyte",
+      #             choices = clear_lake_wq_choices),
+      # leafletOutput(ns("station_selection_map"))
       # uiOutput(ns("station_select_ui")),
       # #server insert ui for us
       # tags$hr(),
@@ -31,8 +57,9 @@ historical_data_ui <- function(id) {
       #              "about_selected_analyte"
       #            )))
       # )
-    ),
-    column(width = 9,
+    
+    column(width = 12,
+           align = "center",
            plotlyOutput(ns("analyte_gage_plot"))
            # plotlyOutput(ns("gage_plot2"))
            )
@@ -55,8 +82,6 @@ water_quality_server <- function(input, output, session) {
   default_station <- 
     clear_lake_wq %>%
       filter(station_name == "Soda Bay 100 Meters")
-
-    
 
   
   output$station_selection_map <-renderLeaflet({
@@ -101,7 +126,7 @@ water_quality_server <- function(input, output, session) {
         selected_wq_data() %>%
           filter(station_name == "Soda Bay 100 Meters")
       )
-  }) %>% bindCache(input$station_selection_map_marker_click) 
+  }) %>% bindCache(input$station_selection_map_marker_click['lat']) 
   
   
   observeEvent(input$station_selection_map_marker_click, {
@@ -117,7 +142,7 @@ water_quality_server <- function(input, output, session) {
         opacity = 1,
         group = "selected_station"
       )
-
+  # print(input$station_selection_map_marker_click)
   })
 #   
   selected_wq_data_in_station <- reactive({
@@ -126,9 +151,10 @@ water_quality_server <- function(input, output, session) {
       selected_wq_data() %>%
         filter(station_code == input$station_selection_map_marker_click['id'])
     }else(
-      default_station) 
+      selected_wq_data() %>% 
+        filter(station_name == "Soda Bay 100 Meters")) 
   })
-  print(selected_wq_data_in_station)
+
   gage_analyte_data <- reactive({
     # req(input$station_selection_map_marker_click)
     # print(selected_wq_data_in_station())
@@ -142,7 +168,8 @@ water_quality_server <- function(input, output, session) {
   ) %>%
     mutate(dateTime = as.Date(dateTime)) %>%
     rename("gage_height" = "X_00065_00003")
-  }) %>% bindCache(input$station_selection_map_marker_click)
+  }) 
+  # %>% bindCache(input$station_selection_map_marker_click)
 #  
   output$analyte_gage_plot <- renderPlotly({
     # req(input$station_selection_map_marker_click)
@@ -161,21 +188,22 @@ water_quality_server <- function(input, output, session) {
         type = 'bar',
         hoverinfo = 'text',
         text = ~ paste(
-          "<br>Date: ",
+          "<br>Date:",
           as.Date(sample_datetime),
-          paste("<br>", input$analyte, ":", numeric_result, na.omit(unit))
+          paste0("<br>", input$analyte, ":", numeric_result, na.omit(unit))
           )
         # tooltip = "text"
       ) %>%
       layout(xaxis = list(title = ~ sample_datetime),
-             yaxis = list(title = selected_wq_data_in_station()$unit[1]),
+             yaxis = list(title = selected_wq_data_in_station()$unit[1], showgrid = TRUE),
              height = 800,
              width = 800,
              hovermode = "x",
-             showlegend = FALSE
+             showlegend = FALSE,
+             
              ) %>%
       add_annotations(
-        text = paste(input$analyte),
+        text = paste(input$analyte, "at", selected_wq_data_in_station()$station_name[1]),
         x = 0,
         y = 1,
         yref = "paper",
@@ -206,8 +234,8 @@ water_quality_server <- function(input, output, session) {
       ) %>%
       layout(
         xaxis = list(title = "Date"),
-        yaxis = list(title = "Feet"),
-        hovermode = "x unified",
+        yaxis = list(title = "Feet", showgrid = TRUE),
+        hovermode = "x",
         height = 800,
         width = 800,
         showlegend = FALSE

@@ -3,3 +3,4 @@ function(input, output, session) {
   callModule(water_quality_server, 'app')
   callModule(wq_data_server, 'app')
 }
+
