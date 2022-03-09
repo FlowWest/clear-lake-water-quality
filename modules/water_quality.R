@@ -199,8 +199,7 @@ water_quality_server <- function(input, output, session) {
              height = 800,
              width = 800,
              hovermode = "x",
-             showlegend = FALSE,
-             
+             showlegend = FALSE
              ) %>%
       add_annotations(
         text = paste(input$analyte, "at", selected_wq_data_in_station()$station_name[1]),

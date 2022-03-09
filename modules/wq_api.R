@@ -299,7 +299,7 @@ wq_data_server <- function(input, output, session) {
         raw_data <- raw_data %>%
           mutate_at('value', as.numeric) %>%
           mutate(
-            "timestamp" = ymd_hms(timestamp) - hours(8),
+            # "timestamp" = ymd_hms(timestamp) - hours(8),
             "date" = as.Date(timestamp),
             "value" = round(value * (9 / 5) + 32, 1)
           ) %>%
