@@ -19,11 +19,6 @@ wqdata_ui <- function(id) {
       tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
     ),
     tags$h3("Realtime Monitoring"),
-    # tags$div(
-    #   class = "well",
-    #   "Select a monitoring location using the map, water quality feature
-    #           from the drop down, and date range below to update the chart"
-    # ),
     tags$div(class = "well",
              fluidRow(
                column(width  = 12, 
@@ -31,9 +26,10 @@ wqdata_ui <- function(id) {
               from the drop down, and date range below to update the chart"),
                tags$br(),
                column(width = 4,
+                      tags$h5('Sensor Locations'),
                       leafletOutput(ns(
                         "sensor_selection_map"
-                      ), height = 150)),
+                      ), height = 200)),
                column(width = 4,
                       uiOutput(ns(
                         "water_variable_select_ui"
@@ -93,16 +89,16 @@ wqdata_ui <- function(id) {
     San Francisco. It is the largest natural freshwater lake
     wholly within the state, with 68 square miles (180 square kilometers) of
     surface area. At 480,000 years, it is the oldest lake in
-    North America.[2] It is the latest lake to occupy a site
+    North America. It is the latest lake to occupy a site
     with a history of lakes stretching back at
-    least 2,500,000 years.[3] The data for Clear Lake is collected from two sensors,
+    least 2,500,000 years. The data for Clear Lake is collected from two sensors,
     one on the west side of Clear Lake (Riviera West), and another on the east side of
     Clear Lake (Clearlake Oaks)."
     ),
     tags$p(
       class = "description",
-      "The dashboard visualizes the hourly data of interest from WQData Live
-    for the past 90 days. Use the pull-down menu to visualize the data,
+      "Visualize the hourly data of interest from WQData Live
+    for the past 90 days. Use the drop down menu to select the water quality data of interest,
     hover the mouse over the graph to find the value of a specific hour, and
     drag the mouse over the chart to zoom in on the graph.
     The lake elevation graph displays the daily value from the USGS gage when the
@@ -188,10 +184,6 @@ wq_data_server <- function(input, output, session) {
   })
   
   selected_sensor_choices <- reactive({
-    # req(input$sensor_selection_map_marker_click)
-    # station_selection <- clickedMarker
-    # print(station_selection)
-    
     #   #map new wq variable to the variables from api
     #   #apply function recode to the variables from api using the mapped variables
     #   #Display the recoded variables as the dropdown menu
@@ -221,9 +213,6 @@ wq_data_server <- function(input, output, session) {
   
   #create water variable selection ui
   output$water_variable_select_ui <- renderUI({
-    #wait for this selection
-    # req(input$sensor_selection_map_marker_click)
-    #
     water_variable_choices <-
       selected_sensor_choices()
     #function returns UI
@@ -321,12 +310,10 @@ wq_data_server <- function(input, output, session) {
       mutate("timestamp" = ymd_hms(timestamp) - hours(8),
              "date" = as.Date(timestamp)) %>%
       filter(!(value == -179968), !(value == -100000))
-    # }
   })
   
   #Visualization
   output$wq_plot <- renderPlotly({
-    # req(input$water_variable, input$dateRange[1], input$dateRange[2])
     
     #Check whether string starts with an opening bracket and closing bracket
     unit <- stringr::str_extract(string = input$water_variable,
@@ -351,7 +338,6 @@ wq_data_server <- function(input, output, session) {
         y = ~ value,
         type = 'scatter',
         mode = 'lines',
-        # fillcolor = '#4C74C9',
         hoverinfo = 'text',
         text = ~ paste(
           "<br>Time: ",
@@ -363,7 +349,7 @@ wq_data_server <- function(input, output, session) {
         )
       ) %>%
       layout(
-        # title = (list(text = formatted_title, y = 0.97)),
+        title = (list(text= formatted_title, y = 0.97)),
         xaxis = list(title = 'Date'),
         yaxis = list(title = paste("Water", input$water_variable)),
         hovermode = "x"
