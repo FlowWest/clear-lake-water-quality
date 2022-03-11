@@ -1,15 +1,4 @@
 
-
-
-
-#function to create ui - it need id to represent server id objects
-#user interface section
-#name space needs to be different for each inidivudal user interface element
-#ns is wrapped around the input ids to keep the namespace uniqe
-#the namepace will append the module id to the input id
-#a module server can contain many elements, these can include rendering outputs, observevents etc.
-#you can use any variable provided in the function anywhere in the server section
-#we could call the outputs that we set up in teh module server (ns) append the output id to the input id
 wqdata_ui <- function(id) {
   ns <- NS(id)
   
@@ -113,11 +102,7 @@ wqdata_ui <- function(id) {
 wq_data_server <- function(input, output, session) {
   #cache the parameters and save it as a vector
   ns <- session$ns
-  #Declarations
-  #put this in global.r file
-  #same as function
-  # temperature <- c("Surface Temperature (°F)", "Lake Bed Temperature (°F)")
-  
+
   default_sensor <- monitoring_stations %>%
     filter(station_name == "riviera")
   api_sensors <- monitoring_stations %>%
@@ -160,8 +145,6 @@ wq_data_server <- function(input, output, session) {
     } else
       (monitoring_stations %>%
          filter(station_name == "riviera"))
-    
-    # print(monitoring_stations['station_name'])
   }) %>% bindCache(input$sensor_selection_map_marker_click['lat'])
   
   
@@ -178,15 +161,9 @@ wq_data_server <- function(input, output, session) {
         opacity = 1,
         group = "selected_sensor"
       )
-    
-    
-    # setView(zoom = 4)
   })
   
   selected_sensor_choices <- reactive({
-    #   #map new wq variable to the variables from api
-    #   #apply function recode to the variables from api using the mapped variables
-    #   #Display the recoded variables as the dropdown menu
     if (selected_sensor()['station_name'] == "riviera") {
       #   #access api based on station code to find the monitoring variables
       api_riviera_wq <-
@@ -208,8 +185,6 @@ wq_data_server <- function(input, output, session) {
               ))
     }
   })
-  
-  
   
   #create water variable selection ui
   output$water_variable_select_ui <- renderUI({
@@ -282,7 +257,6 @@ wq_data_server <- function(input, output, session) {
       variable_info <-
         fromJSON(rawToChar(variable_json_data$content))
       raw_data <- variable_info$data
-      # View(raw_data)
       if (input$water_variable == "Surface Temperature (F)" |
           input$water_variable == "Lake Bed Temperature (F)") {
         raw_data <- raw_data %>%
