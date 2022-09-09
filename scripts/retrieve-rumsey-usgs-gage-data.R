@@ -4,7 +4,7 @@ library(dataRetrieval)
 library(tidyverse)
 
 station_id <- 11451800 # id for station cache creek a rumsey ca
-date <- "2010-01-01" # pull data for 2 weeks prior
+date <- Sys.Date() - 30 # pull data for 2 weeks prior
 parameterCd <- "00060"
 
 rumsey_flows_prior_2_weeks <- dataRetrieval::readNWISdv(station_id, parameterCd, date)
@@ -21,9 +21,8 @@ clear_lake_param_cd <- "00065"
 
 clear_lake_elevation <- readNWISdv(siteNumbers = clear_lake_id, 
                                    parameterCd = clear_lake_param_cd, 
-                                   startDate = date, 
+                                   startDate = Sys.Date() - 60, 
                                    endDate = Sys.Date()) %>% 
   select(Date, `Elevation (ft)` = X_00065_00003)
 
 write_rds(clear_lake_elevation, "data/clear-lake-elevation.rds")
-

@@ -1,30 +1,3 @@
-
 .app-controls {
   background-color: #e9e9e9;
 }
-
-
-body{
-height: 584px;
-width: 1005px;
-margin: auto 
-}
-
-.selection{
-    background: #ecefed;
-    padding-left: 10px;
-    padding-top: 15px;
-    padding-bottom: 15px;
-    padding-right: 10px;
-}
-
-.wq_graph_label {
-  text-align: center;
-  font-size: small;
-}
-
-.usgs_graph_label{
-  font-size: small;
-}
-
-
