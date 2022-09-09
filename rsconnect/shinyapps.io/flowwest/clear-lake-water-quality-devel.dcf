@@ -1,0 +1,13 @@
+name: clear-lake-water-quality-devel
+title: clear-lake-water-quality-devel
+username:
+account: flowwest
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6966236
+bundleId: 6286085
+url: https://flowwest.shinyapps.io/clear-lake-water-quality-devel/
+when: 1662746010.97812
+lastSyncTime: 1662746010.97813
+asMultiple: FALSE
+asStatic: FALSE

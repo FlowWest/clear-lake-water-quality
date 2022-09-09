@@ -1,180 +1,186 @@
-water_quality_ui <- function(id) {
+historical_data_ui <- function(id) {
   ns <- NS(id)
   
   tagList(
-    column(width = 3, 
-           tags$h3("Water Quality"),
-           tags$p("Use this dashboard to visualize different analytes 
-                  of interest located in or around the Big Valley Rancheria."),
-           selectInput(ns("analyte"), "Select analyte", 
-                       choices = bvr_analytes), 
-           uiOutput(ns("station_select_ui")), 
-           tags$hr(), 
-           tabsetPanel(
-             type = "pills",
-             tabPanel(
-               "Analyte Details",
-               uiOutput(ns("about_selected_analyte"))
-             ),
-             tabPanel(
-               "Station Map", 
-               leafletOutput(ns("station_map"))
+    tags$head(
+      tags$style("body{
+      height: 584px;
+      width: 1005px;
+      margin: auto;
+          }")
+    ),
+    tags$h3("Historic Water Quality"),
+    tags$div(class = "well",
+               fluidRow(
+                 column(width  = 12, 
+                        "Select a monitoring station using the map and a water quality feature
+              from the drop down to update the chart."),
+                 tags$br(),
+                 column(width = 6,
+                        tags$h5("Station Locations"),
+                        leafletOutput(ns(
+                          "station_selection_map"
+                        ), height = 200)),
+                 column(width = 5,
+                        uiOutput(ns("clear_lake_wq_select_ui"))),
+               )),
+    
+    column(width = 12,
+           align = "left",
+           fluidRow(
+             plotlyOutput(ns("historic_gage_plot"),
+                          height = 500),
+             tags$br(),
+             tags$p(
+               "Source: The Big Valley Band of Pomo Indians obtained Clear Lake water quality data from stakeholders and public agences.
+                    The initial data incoporated into the master dataset included California Department of Food and Agriculture (CDFA)
+                    and California Department of Water Resources (CDWR)."
              )
-           )), 
-    column(width = 9, 
-           plotlyOutput(ns("analyte_plot")), 
-           plotlyOutput(ns("analyte_boxplot")))
+           ))
   )
 }
 
+
 water_quality_server <- function(input, output, session) {
-  
   ns <- session$ns
   
-  selected_wq_data <- reactive({
-    bvr_water_quality %>% 
-      filter(analyte == input$analyte, 
-             !is.na(value_numeric)) 
+  default_station <- 
+    clear_lake_wq %>%
+      filter(station_name == "Soda Bay 100 Meters")
+
+  output$station_selection_map <-renderLeaflet({
+    leaflet() %>%
+      addProviderTiles(providers$OpenStreetMap) %>%
+      addCircleMarkers(
+        data = clear_lake_wq,
+        layerId = clear_lake_wq$station_code,
+        radius = 6,
+        fillOpacity = .4,
+        weight = 2,
+        color = "#2e2e2e",
+        fillColor = "#555555",
+        opacity = .4,
+        label = paste(str_to_title(clear_lake_wq$station_name), "Sensor")
+      )%>%
+      setView(lng = -122.708927,
+              lat = 39.012078,
+              zoom = 10)%>%
+      addCircleMarkers(
+        data = default_station,
+        ~default_station$longitude,
+        ~default_station$latitude,
+        fillOpacity = .8,
+        weight = 2,
+        color = "#2e2e2e",
+        fillColor = "#28b62c",
+        opacity = 1,
+        group = "default_station"
+      )
   })
   
-  abundance_by_station <- reactive({
-    selected_wq_data() %>% 
-      group_by(station_id) %>% 
-      summarise(
-        total = n()
-      ) %>% ungroup()
+  selected_station <- reactive({
+    if (length(input$station_selection_map_marker_click['lat']) > 0) {
+      clear_lake_wq %>%
+        filter(latitude == input$station_selection_map_marker_click['lat'])
+    } 
+    else
+      (
+        clear_lake_wq %>%
+          filter(station_name == "Soda Bay 100 Meters")
+      )
+  }) %>% bindCache(input$station_selection_map_marker_click['lat']) 
+  
+  
+  observeEvent(input$station_selection_map_marker_click, {
+    leafletProxy("station_selection_map") %>%
+      clearGroup("default_station") %>%
+      clearGroup('selected_station') %>%
+      addCircleMarkers(
+        data = selected_station(),
+        fillOpacity = .8,
+        weight = 2,
+        color = "#2e2e2e",
+        fillColor = "#28b62c",
+        opacity = 1,
+        group = "selected_station"
+      )
   })
   
-  output$station_select_ui <- renderUI({
-    station_choices <- 
-      abundance_by_station() %>% 
-      arrange(desc(total))
+  selected_station <- reactive({
+    if (length(input$station_selection_map_marker_click['lat']) > 0) {
+      clear_lake_wq %>%
+        filter(station_code == input$station_selection_map_marker_click['id'])
+    }else(
+      clear_lake_wq %>% 
+        filter(station_name == "Soda Bay 100 Meters")) 
+  })
+  
+ output$clear_lake_wq_select_ui<- renderUI({
+   
+   historic_water_variable_choices <-
+     unique(selected_station()$analyte_name)
+   #function returns UI
+   selectInput(
+     ns("historic_water_variable"),
+     label = h5("Water Quality Features"),
+     selected = NULL,
+     choices = historic_water_variable_choices,
+     width = '250px',
+     multiple = FALSE
+   )
+  })
+ 
+ selected_wq_data_in_station <- reactive(
+   selected_station() %>% 
+     filter(analyte_name == input$historic_water_variable)
+ )
+
+#  
+  output$historic_gage_plot <- renderPlotly({
+    # req(input$station_selection_map_marker_click)
     
-    pickerInput(
-      inputId = ns("station"),
-      label = "Select station(s)", 
-      choices = station_choices$station_id,
-      choicesOpt = list(
-        subtext = paste(" observations", 
-                        station_choices$total,
-                        sep = ": "))
-    )
-  })
-  
-  selected_wq_data_in_station <- reactive({
-    selected_wq_data() %>% 
-      filter(station_id == input$station)
-  })
-  
-  output$analyte_plot <- renderPlotly({
+    shiny::validate(
+      need(nrow(selected_wq_data_in_station()) > 0, "Selection yielded no results"))
     
-    req(input$station)
-    selected_wq_data_in_station() %>% 
-      plot_ly(x=~datetime, 
-              y=~value_numeric, 
-              type = 'scatter', mode='markers') %>% 
-      layout(xaxis = list(title = ""), yaxis = list(title = input$analyte))
-  })
-  
-  output$analyte_boxplot <- renderPlotly({
-    selected_wq_data_in_station() %>% 
-      mutate(month = factor(month.abb[month(datetime)], 
-                            levels = month.abb)) %>% 
-      plot_ly(x=~month, y=~value_numeric) %>% 
-      add_boxplot(boxpoints = "outliers")
-  })
-  
-  
-  output$about_selected_analyte <- renderUI({
-    description <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
-      pull(description)
     
-    description_img <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
-      pull(img_url)
+    unit <- selected_wq_data_in_station() %>%
+      pull(unit)
     
-    description_cite <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
-      pull(source_citation)
-    
-    tagList(
-      tags$h4(input$analyte), 
-      tags$p(paste(description)), 
-      actionLink(ns("analyte_image_link"), 
-                 href = "#", label = tags$img(src = paste(description_img), width = "400px")),
-      helpText(paste("source:", description_cite))
-    )
-    
+    analyte_plot <- selected_wq_data_in_station() %>%
+      plot_ly(
+        x =  ~ sample_datetime,
+        y =  ~ numeric_result,
+        type = 'bar',
+        hoverinfo = 'text',
+        text = ~ paste(
+          "<br>Date:",
+          as.Date(sample_datetime),
+          paste0("<br>", input$historic_water_variable, ": ", numeric_result, na.omit(unit))
+          )
+      ) %>%
+      layout(xaxis = list(title = ~ sample_datetime),
+             yaxis = list(title = selected_wq_data_in_station()$unit[1], showgrid = TRUE),
+             height = 500,
+             width = 1000,
+             hovermode = "x",
+             showlegend = FALSE
+             ) %>%
+      add_annotations(
+        text = paste(input$historic_water_variable, "at", selected_wq_data_in_station()$station_name[1]),
+        x = 0,
+        y = 1,
+        yref = "paper",
+        xref = "paper",
+        xanchor = "left",
+        yanchor = "top",
+        yshift = 30,
+        showarrow = FALSE,
+        font = list(size = 18)
+      ) %>%
+      plotly::config(displayModeBar = FALSE) %>%
+      plotly::config(showLink = FALSE)
   })
-  
-  observeEvent(input$analyte_image_link, {
-    
-    description_img <- analyte_descriptions %>% 
-      filter(analyte == input$analyte) %>% 
-      pull(img_url)
-    
-    showModal(
-      modalDialog(title = input$analyte, 
-                  tagList(
-                    tags$img(src = paste(description_img))
-                  ), size = "l")
-    )
-  })
-  
-  selected_station_map_marker <- reactive({
-    bvr_stations %>% 
-      filter(station_id == input$station)
-  })
-  
-  output$station_map <- renderLeaflet({
-    leaflet() %>% 
-      addProviderTiles(providers$Esri.WorldTopoMap) %>% 
-      addCircleMarkers(data=bvr_stations, 
-                       fillOpacity = .8,
-                       weight = 2,
-                       color = "#2e2e2e", 
-                       fillColor = "#555555",
-                       opacity = 1, 
-                       label = ~station_id)
-  })
-  
-  observeEvent(input$station, {
-    leafletProxy("station_map") %>% 
-      clearGroup("selected_station") %>% 
-      addCircleMarkers(data=selected_station_map_marker(), 
-                       fillOpacity = .8,
-                       weight = 2,
-                       color = "#2e2e2e", 
-                       fillColor = "#28b62c",
-                       opacity = 1, 
-                       label = ~station_id, 
-                       group = "selected_station")
-  })
-  
-  
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
