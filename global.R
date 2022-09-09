@@ -51,7 +51,7 @@ clear_lake_elevation <- read_rds("data/clear-lake-elevation.rds")
 
 #WQ API ------------------------------------------------------------------------
 
-apikey <- Sys.getenv("API_KEY")
+apikey <- Sys.getenv("WQ_API_KEY")
 base_url <- "https://www.wqdatalive.com/api/v1/devices"
 edited_oaks_wq <- read_rds("data/oaks_water_quality.rds")
 edited_riviera_wq <- read_rds("data/riviera_water_quality.rds")
