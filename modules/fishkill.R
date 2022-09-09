@@ -22,7 +22,7 @@ fishkill_ui <- function(id) {
            tags$a(href = "https://www.inaturalist.org/projects/clear-lake-fish-kill-monitoring-project?tab=observations", "iNaturalist"), 
            "to record and view fish kills. Step by step instruction on reporting fish kills on Clear Lake with iNaturalist, can be found", 
                   tags$a("here", href="Reporting fish kills with iNaturalist 2021 V1B.pdf", 
-                         target = "_blank"),
+                         target = "_blank"), ".",
            tags$br(),
            tags$br(),
            downloadButton(ns('download'), "Download CSV")

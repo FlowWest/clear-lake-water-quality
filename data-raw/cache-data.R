@@ -1,5 +1,4 @@
-library(adobeCreekData)
-
+load(file = "data-raw/bvr_water_quality.rda")
 bvr_analytes <- distinct(bvr_water_quality, analyte) %>% pull()
 
 write_rds(bvr_analytes, "data/bvr-analytes.rds")

@@ -34,7 +34,7 @@ historical_data_ui <- function(id) {
              tags$p(
                "Source: The Big Valley Band of Pomo Indians obtained Clear Lake water quality data from stakeholders and public agences.
                     The initial data incoporated into the master dataset included California Department of Food and Agriculture (CDFA)
-                    and California Department of Water Resources (CDWR)"
+                    and California Department of Water Resources (CDWR)."
              )
            ))
   )
@@ -141,7 +141,8 @@ water_quality_server <- function(input, output, session) {
     
     shiny::validate(
       need(nrow(selected_wq_data_in_station()) > 0, "Selection yielded no results"))
-
+    
+    
     unit <- selected_wq_data_in_station() %>%
       pull(unit)
     
