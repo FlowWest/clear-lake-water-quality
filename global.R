@@ -50,6 +50,7 @@ rumsey_flows <- read_rds("data/rumsey_flows.rds")
 clear_lake_elevation <- read_rds("data/clear-lake-elevation.rds")
 
 #WQ API ------------------------------------------------------------------------
+
 apikey <- Sys.getenv("API_KEY")
 base_url <- "https://www.wqdatalive.com/api/v1/devices"
 edited_oaks_wq <- read_rds("data/oaks_water_quality.rds")
@@ -60,9 +61,10 @@ wq_parameters <- read.csv("data/water_quality_parameters.csv")
 #create selection that returns monitoring device id
 get_station_parameters <-
   function(station_id) {
-    device_url = paste0(base_url, "/", station_id, "/", "parameters?", apikey)
+    device_url = paste0(base_url, "/", station_id, "/", "parameters?apiKey=", apikey)
     device = GET(url = device_url)
     device_parameters <- fromJSON(rawToChar(device$content))
     parameters_df <- do.call(rbind.data.frame, device_parameters)
   }
 monitoring_stations <- read_rds("data/monitoring_stations_coordinates.rds")
+

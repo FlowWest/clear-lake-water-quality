@@ -41,6 +41,7 @@ wqdata_ui <- function(id) {
       width = 12,
       column(
         width = 8,
+        dataTableOutput(ns('data_input')),
         plotlyOutput(ns("wq_plot")),
         tags$div(
           class = "wq_graph_label",
@@ -222,10 +223,9 @@ wq_data_server <- function(input, output, session) {
             base_url,
             "/",
             riviera_id,
-            "/",
-            "parameters/",
+            "/parameters/",
             parameter_id,
-            "/data?",
+            "/data?apiKey=",
             apikey,
             "&from=",
             query_start_date,
@@ -241,16 +241,15 @@ wq_data_server <- function(input, output, session) {
           base_url,
           "/",
           oaks_id,
-          "/",
-          "parameters/",
+          "/parameters/",
           parameter_id,
-          "/data?",
+          "/data?apiKey=",
           apikey,
           "&from=",
           query_start_date,
-          '%2010:00:00&to=',
+          '%2008:00:00&to=',
           query_end_date,
-          "%2010:00:00"
+          "%2008:00:00"
         )
       }
       variable_json_data <- GET(url = data_url)
@@ -276,17 +275,16 @@ wq_data_server <- function(input, output, session) {
     }
   dataInput <- reactive({
     req(input$water_variable, input$dateRange[1], input$dateRange[2])
-    
+
     get_data(input$dateRange[1],
              input$dateRange[2],
              selected_sensor()['station_name'],
-             input$water_variable) %>%
-      mutate("timestamp" = ymd_hms(timestamp) - hours(8),
-             "date" = as.Date(timestamp)) %>%
-      filter(!(value == -179968), !(value == -100000))
+             input$water_variable)%>%
+  mutate("timestamp" = ymd_hms(timestamp) - hours(8),
+  "date" = as.Date(timestamp)) %>%
+  filter(!(value == -179968), !(value == -100000))
   })
-  
-  #Visualization
+    #Visualization
   output$wq_plot <- renderPlotly({
     
     #Check whether string starts with an opening bracket and closing bracket

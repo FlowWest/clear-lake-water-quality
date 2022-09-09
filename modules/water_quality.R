@@ -154,7 +154,7 @@ water_quality_server <- function(input, output, session) {
         text = ~ paste(
           "<br>Date:",
           as.Date(sample_datetime),
-          paste0("<br>", input$historic_water_variable, ":", numeric_result, na.omit(unit))
+          paste0("<br>", input$historic_water_variable, ": ", numeric_result, na.omit(unit))
           )
       ) %>%
       layout(xaxis = list(title = ~ sample_datetime),
