@@ -214,7 +214,7 @@ wq_data_server <- function(input, output, session) {
       
       if (monitoring_station == "riviera") {
         #create a key value pair where key is the wq variables and values are the api associated id
-        riviera_vals <- get_station_parameters(riviera_id)$id[13:20]
+        riviera_vals <- wq_parameters$id[1:8]
         names(riviera_vals) <- edited_riviera_wq
         #call associated parameter id based wq variabe
         parameter_id <- riviera_vals[water_variable]
@@ -234,7 +234,7 @@ wq_data_server <- function(input, output, session) {
             "%2008:00:00"
           )
       } else if (monitoring_station == "oaks") {
-        oaks_vals <- get_station_parameters(oaks_id)$id[13:24]
+        oaks_vals <- wq_parameters$id[9:20]
         names(oaks_vals) <- edited_oaks_wq
         parameter_id <- oaks_vals[water_variable]
         data_url <- paste0(

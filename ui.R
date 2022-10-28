@@ -6,7 +6,6 @@ shinyUI(
     theme = shinythemes::shinytheme("yeti"),
     
     header = includeCSS("www/styles.css"), 
-    #Calling the UI modules 
     tabPanel(title = tags$strong("Live Data", style = "font-size:20px;"), 
              wqdata_ui('app')),
     tabPanel(title = tags$strong("Historic Data", style = "font-size:20px;"), 
