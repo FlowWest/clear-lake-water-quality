@@ -28,7 +28,7 @@ wqdata_ui <- function(id) {
                  width = 4,
                  dateRangeInput(
                    ns('dateRange'),
-                   label = h5('Date Range Input: YYYY-MM-DD'),
+                   label = h5('Select Date Range (Max 90 Days)'),
                    start = Sys.Date() - 7,
                    end = Sys.Date(),
                    min = Sys.Date() - 90,
@@ -167,23 +167,36 @@ wq_data_server <- function(input, output, session) {
   selected_sensor_choices <- reactive({
     if (selected_sensor()['station_name'] == "riviera") {
       #   #access api based on station code to find the monitoring variables
-      api_riviera_wq <-
-        wq_parameters$name[1:8]
+      api_riviera_wq <- wq_parameters |> 
+        filter(sensor_location == "Riviera") |> 
+        select("name")
+      api_riviera_wq <- as.vector(unname(api_riviera_wq))[[1]]
+      # api_riviera_wq <-
+        # wq_parameters$name[1:8]
       #   #map new wq variable to the variables from api
       #   #apply function recode to the variables from api using the mapped variables
       #   #Display the recoded variables as the dropdown menu
-      do.call(recode,
-              c(
-                list(api_riviera_wq),
-                setNames(edited_riviera_wq, api_riviera_wq)
-              ))
+      names(api_riviera_wq) <- edited_riviera_wq
+      
+      # do.call(recode,
+      #         c(
+      #           list(api_riviera_wq),
+      #           setNames(edited_riviera_wq, api_riviera_wq)
+      #         ))
     } else if (selected_sensor()['station_name'] == "oaks") {
-      api_oaks_wq <- wq_parameters$name[9:20]
-      do.call(recode,
-              c(
-                list(api_oaks_wq),
-                setNames(edited_oaks_wq, api_oaks_wq)
-              ))
+      api_oaks_wq <- wq_parameters |> 
+        filter(sensor_location == "Oaks") |> 
+        select("name")  
+      
+      api_oaks_wq <- as.vector(unname(api_oaks_wq))[[1]]  
+      # as_tibble()
+      # api_oaks_wq <- wq_parameters$name[9:20]
+      names(api_oaks_wq) <- edited_oaks_wq
+      # do.call(recode,
+      #         c(
+      #           list(api_oaks_wq),
+      #           setNames(edited_oaks_wq, api_oaks_wq)
+      #         ))
     }
   })
   

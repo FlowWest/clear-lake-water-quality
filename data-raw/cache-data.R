@@ -13,7 +13,7 @@ get_station_parameters <-
     parameters_df <- do.call(rbind.data.frame, device_parameters)
   }
 riviera_id <- 2656
-oaks_id <- 2660
+oaks_id <- 3733
 
 riviera_params <- get_station_parameters(riviera_id)[13:20,]
 oaks_params <- get_station_parameters(oaks_id)[13:24,]

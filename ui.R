@@ -8,8 +8,8 @@ shinyUI(
     header = includeCSS("www/styles.css"), 
     tabPanel(title = tags$strong("Live Data", style = "font-size:20px;"), 
              wqdata_ui('app')),
-    tabPanel(title = tags$strong("Historic Data", style = "font-size:20px;"), 
-             historical_data_ui('app')),
+    # tabPanel(title = tags$strong("Historic Data", style = "font-size:20px;"), 
+    #          historical_data_ui('app')),
     tabPanel(title = tags$strong("Community Science",style = "font-size:20px;"), 
              fishkill_ui('app'))
 

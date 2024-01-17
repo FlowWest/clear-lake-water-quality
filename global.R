@@ -16,7 +16,7 @@ library(shinydashboard)
 
 source("modules/fishkill.R")
 source("modules/wq_api.R")
-source("modules/water_quality.R")
+# source("modules/water_quality.R")
 
 
 # Water Quality -----------------------------------------------------------------
@@ -41,7 +41,7 @@ parametercd <- "00065"
 # add tag to show if recent observation
 fish_kill_data <- read_rds("data/fish_kill_data.rds") %>% 
   mutate(is_recent = ifelse(date_observed > today() - 15, 
-                            "recent observation (15 days)", 
+                            "recent observation (15 days)",
                             "archived observation (16+ days)"))
 
 summary_table <- read_rds("data/summary_table.rds")
@@ -56,7 +56,7 @@ base_url <- "https://www.wqdatalive.com/api/v1/devices"
 edited_oaks_wq <- read_rds("data/oaks_water_quality.rds")
 edited_riviera_wq <- read_rds("data/riviera_water_quality.rds")
 riviera_id <- 2656
-oaks_id <- 2660
+oaks_id <- 3733
 wq_parameters <- read.csv("data/water_quality_parameters.csv")
 monitoring_stations <- read_rds("data/monitoring_stations_coordinates.rds")
 
