@@ -31,7 +31,7 @@ wqdata_ui <- function(id) {
                    label = h5('Select Date Range (Max 90 Days)'),
                    start = Sys.Date() - 7,
                    end = Sys.Date(),
-                   min = Sys.Date() - 90,
+                   min = Sys.Date() - 89,
                    max = Sys.Date()
                  )
                )
@@ -171,32 +171,17 @@ wq_data_server <- function(input, output, session) {
         filter(sensor_location == "Riviera") |> 
         select("name")
       api_riviera_wq <- as.vector(unname(api_riviera_wq))[[1]]
-      # api_riviera_wq <-
-        # wq_parameters$name[1:8]
       #   #map new wq variable to the variables from api
       #   #apply function recode to the variables from api using the mapped variables
       #   #Display the recoded variables as the dropdown menu
       names(api_riviera_wq) <- edited_riviera_wq
-      
-      # do.call(recode,
-      #         c(
-      #           list(api_riviera_wq),
-      #           setNames(edited_riviera_wq, api_riviera_wq)
-      #         ))
     } else if (selected_sensor()['station_name'] == "oaks") {
       api_oaks_wq <- wq_parameters |> 
         filter(sensor_location == "Oaks") |> 
         select("name")  
-      
       api_oaks_wq <- as.vector(unname(api_oaks_wq))[[1]]  
-      # as_tibble()
-      # api_oaks_wq <- wq_parameters$name[9:20]
       names(api_oaks_wq) <- edited_oaks_wq
-      # do.call(recode,
-      #         c(
-      #           list(api_oaks_wq),
-      #           setNames(edited_oaks_wq, api_oaks_wq)
-      #         ))
+
     }
   })
   
@@ -227,7 +212,12 @@ wq_data_server <- function(input, output, session) {
       
       if (monitoring_station == "riviera") {
         #create a key value pair where key is the wq variables and values are the api associated id
-        riviera_vals <- wq_parameters$id[1:8]
+        api_riviera_val <- wq_parameters |> 
+          filter(sensor_location == "Riviera") |> 
+          select("id")
+        riviera_vals <- as.vector(unname(api_riviera_val))[[1]]
+        
+        # riviera_vals <- wq_parameters$id[1:8]
         names(riviera_vals) <- edited_riviera_wq
         #call associated parameter id based wq variabe
         parameter_id <- riviera_vals[water_variable]
@@ -247,7 +237,11 @@ wq_data_server <- function(input, output, session) {
             "%2008:00:00"
           )
       } else if (monitoring_station == "oaks") {
-        oaks_vals <- wq_parameters$id[9:20]
+        api_oaks_val <- wq_parameters |> 
+          filter(sensor_location == "Oaks") |> 
+          select("id")
+        oaks_vals <- as.vector(unname(api_oaks_val))[[1]]
+        # oaks_vals <- wq_parameters$id[9:20]
         names(oaks_vals) <- edited_oaks_wq
         parameter_id <- oaks_vals[water_variable]
         data_url <- paste0(
@@ -299,10 +293,14 @@ wq_data_server <- function(input, output, session) {
   })
     #Visualization
   output$wq_plot <- renderPlotly({
+    req(input$water_variable)
     
     #Check whether string starts with an opening bracket and closing bracket
     unit <- stringr::str_extract(string = input$water_variable,
                                  pattern = "(?<=\\().*(?=\\))")
+    if (is.na(unit)){
+      unit <- ""
+    }
     hover_label <-
       paste0(
         "<br>" ,
@@ -311,7 +309,6 @@ wq_data_server <- function(input, output, session) {
       )
     formatted_title <-
       paste(
-        "Water",
         input$water_variable,
         "from",
         str_to_title(selected_sensor()['station_name']),

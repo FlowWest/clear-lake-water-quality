@@ -22,3 +22,28 @@ wq_parameters <- bind_rows(riviera_params %>%
                            oaks_params %>% 
                              mutate(sensor_location = 'Oaks'))
 write.csv(wq_parameters, "data/water_quality_parameters.csv")
+
+edited_riviera_wq <- c("Surface Temperature (F)",
+                       "Surface Specific Conductivity (uS/cm)",
+                       "Surface Dissolved Oxygen Saturation (%)",
+                       "Surface Dissolved Oxygen (mg/L)",
+                       "Surface Chlorophyll (ug/L)",
+                       "Surface Chlorophyll (RFU)",
+                       "Surface Phycocyanin (ug/L)",
+                       "Surface Phycocyanin (RFU)") 
+write_rds(edited_riviera_wq, "data/riviera_water_quality.rds")
+
+edited_oaks_wq <- c( "Lake Bed Temperature (F)",                
+                     "Lake Bed Specific Conductivity (uS/cm)",           
+                     "Lake Bed Dissolved Oxygen Saturation (%)",
+                     "Lake Bed Dissolved Oxygen (mg/L)",        
+                     "Lake Bed pH mV",                 
+                     "Lake Bed pH",            
+                     "Surface Temperature (F)", 
+                     "Surface Conductivity (uS/cm)",         
+                     "Surface Specific Conductivity (uS/cm)",              
+                     "Surface Salinity (PPT)",               
+                     "Surface pH mV",              
+                     "Surface pH")
+
+write_rds(edited_oaks_wq, "data/oaks_water_quality.rds")
