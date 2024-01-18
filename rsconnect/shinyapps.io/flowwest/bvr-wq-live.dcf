@@ -1,0 +1,12 @@
+name: bvr-wq-live
+title: bvr-wq-live
+username: flowwest
+account: flowwest
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7456290
+bundleId: 8156616
+url: https://flowwest.shinyapps.io/bvr-wq-live/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
