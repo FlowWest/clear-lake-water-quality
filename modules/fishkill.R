@@ -23,14 +23,18 @@ fishkill_ui <- function(id) {
            "to record and view fish kills. Step by step instruction on reporting fish kills on Clear Lake with iNaturalist, can be found", 
                   tags$a("here", href="Reporting fish kills with iNaturalist 2021 V1B.pdf", 
                          target = "_blank"), ".",
-           tags$br(),
-           tags$br(),
-           downloadButton(ns('download'), "Download CSV")
+           # tags$br(),
+           # tags$br(),
+           # downloadButton(ns('download'), "Download CSV")
            ),
     column(width = 8,
-           leafletOutput(ns("fish_kills_map"), width = "100%", height = 700)
+           leafletOutput(ns("fish_kills_map"), width = "100%", height = 700)),
+    column(width = 12,
+           tags$h4("Data Summary"),
+                DT::dataTableOutput(ns("summary_table")),
+                tags$br(),
+                tags$br()
            )
-  
 )
 }
 
@@ -78,18 +82,30 @@ fishkill_server <- function(input, output, session) {
       )
   })
   summary_table<- summary_table %>% 
+    dplyr::arrange(desc(ymd(summary_table$date_observed))) |> 
     rename("Taxon Name" = taxon_name,
-         "Common Name" = taxon_common_name,
-         "Date Observed" = date_observed,
-         'Description' = description) %>% 
+           "Common Name" = taxon_common_name,
+           "Date Observed" = date_observed,
+           'Description' = description) %>% 
     select(-longitude, -latitude)
   
-  output$download <- downloadHandler(
-    filename = "fish_kill_summary_table.csv",
-    content = function(file) {
-      write.csv(summary_table, file, row.names = FALSE)
-    }
-  )
+  output$summary_table <- DT::renderDataTable(summary_table, 
+                                              extensions = "Buttons", 
+                                              options = list(dom = 'Btp', 
+                                                             buttons = 
+                                                               list(list(
+                                                                 extend = 'collection',
+                                                                 buttons = c('copy','csv'),
+                                                                 text = 'Download'
+                                                               ))),
+                                              server = FALSE)
+
+  # output$download <- downloadHandler(
+  #   filename = "fish_kill_summary_table.csv",
+  #   content = function(file) {
+  #     write.csv(summary_table, file, row.names = FALSE)
+  #   }
+  # )
 }
 
 
