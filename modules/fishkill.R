@@ -86,8 +86,9 @@ fishkill_server <- function(input, output, session) {
     rename("Taxon Name" = taxon_name,
            "Common Name" = taxon_common_name,
            "Date Observed" = date_observed,
-           'Description' = description) %>% 
-    select(-longitude, -latitude)
+           'Description' = description,
+           'Longitude' = longitude,
+           'Latitude' = latitude)
   
   output$summary_table <- DT::renderDataTable(summary_table, 
                                               extensions = "Buttons", 
