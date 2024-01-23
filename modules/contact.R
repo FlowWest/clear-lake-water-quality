@@ -10,20 +10,17 @@ contact_ui <- function(id) {
           }"
       )
     ),
-    column(width = 4, 
+    column(width = 12, 
            tags$h3("Big Valley Rancheria Contact"),
            tags$p(
-             "Address: 2726 Mission Road, Lakeport CA 95453" 
+             "Address: 2726 Mission Rancheria Road, Lakeport CA 95453"),
+           tags$p(
+             "Telephone: (707)263-3924"
            ),
            tags$p(
-             "Email: receptionist@big-valley.net"
-           ),
+             "Environmental Director: Sarah Ryan, sryan@big-valley.net"),
            tags$p(
-             "Tel:(707)263-3924"
-           ),
-           tags$p(
-             "Fax:(707)264-6613"
-           )
+             "Environmental Specialist: Alicia Castellanos, acastellanos@big-valley.net")
   )
   )
 }
