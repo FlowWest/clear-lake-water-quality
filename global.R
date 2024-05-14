@@ -86,7 +86,7 @@ base_url <- "https://www.wqdatalive.com/api/v1/devices"
 edited_oaks_wq <- read_rds("data/oaks_water_quality.rds")
 edited_riviera_wq <- read_rds("data/riviera_water_quality.rds")
 riviera_id <- 2656
-oaks_id <- 3733
+oaks_id <- 4025
 wq_parameters <- read.csv("data/water_quality_parameters.csv")
 monitoring_stations <- read_rds("data/monitoring_stations_coordinates.rds")
 

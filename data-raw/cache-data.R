@@ -13,10 +13,10 @@ get_station_parameters <-
     parameters_df <- do.call(rbind.data.frame, device_parameters)
   }
 riviera_id <- 2656
-oaks_id <- 3733
+oaks_id <- 4025
 
 riviera_params <- get_station_parameters(riviera_id)[13:20,]
-oaks_params <- get_station_parameters(oaks_id)[13:24,]
+oaks_params <- get_station_parameters(oaks_id)[13:30,]
 wq_parameters <- bind_rows(riviera_params %>% 
                              mutate(sensor_location = 'Riviera'), 
                            oaks_params %>% 
@@ -31,19 +31,25 @@ edited_riviera_wq <- c("Surface Temperature (F)",
                        "Surface Chlorophyll (RFU)",
                        "Surface Phycocyanin (ug/L)",
                        "Surface Phycocyanin (RFU)") 
-write_rds(edited_riviera_wq, "data/riviera_water_quality.rds")
+saveRDS(edited_riviera_wq, "data/riviera_water_quality.rds")
 
 edited_oaks_wq <- c( "Lake Bed Temperature (F)",                
                      "Lake Bed Specific Conductivity (uS/cm)",           
                      "Lake Bed Dissolved Oxygen Saturation (%)",
                      "Lake Bed Dissolved Oxygen (mg/L)",        
-                     "Lake Bed pH mV",                 
-                     "Lake Bed pH",            
+                     "Lake Bed pH (mV)",                 
+                     "Lake Bed pH",
+                     "Lake Bed Chlorophyll (RFU)",
+                     "Lake Bed Phycocyanin (RFU)",
+                     "Lake Bed Oxidation Reduction Potential (mV)",            
                      "Surface Temperature (F)", 
                      "Surface Conductivity (uS/cm)",         
                      "Surface Specific Conductivity (uS/cm)",              
-                     "Surface Salinity (PPT)",               
-                     "Surface pH mV",              
-                     "Surface pH")
+                     "Surface pH (mV)",
+                     "Surface pH",
+                     "Surface Oxidation Reduction Potential (mV)",
+                     "Surface Dissolved Oxygen Saturation (%)",
+                     "Surface Chlorophyll (RFU)",
+                     "Surface Phycocyanin (RFU)")
 
-write_rds(edited_oaks_wq, "data/oaks_water_quality.rds")
+saveRDS(edited_oaks_wq, "data/oaks_water_quality.rds")
