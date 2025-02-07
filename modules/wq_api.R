@@ -29,10 +29,13 @@ wqdata_ui <- function(id) {
                  dateRangeInput(
                    ns('dateRange'),
                    label = h5('Select Date Range (Max 90 Days)'),
-                   start = Sys.Date() - 7,
-                   end = Sys.Date(),
+                   start = "2025-01-12",
+                   end = "2025-01-19",
+                   # start = Sys.Date() - 7,
+                   # end = Sys.Date(),
                    min = Sys.Date() - 89,
-                   max = Sys.Date()
+                   max = "2025-01-19"
+                   # max = Sys.Date()
                  )
                )
              )),
@@ -282,19 +285,27 @@ wq_data_server <- function(input, output, session) {
     }
   dataInput <- reactive({
     req(input$water_variable, input$dateRange[1], input$dateRange[2])
-
     get_data(input$dateRange[1],
              input$dateRange[2],
              selected_sensor()['station_name'],
              input$water_variable)%>%
-  mutate("timestamp" = ymd_hms(timestamp) - hours(8),
-  "date" = as.Date(timestamp)) %>%
-  filter(!(value == -179968), !(value == -100000))
+    mutate("timestamp" = ymd_hms(timestamp) - hours(8),
+            "date" = as.Date(timestamp)) %>%
+    filter(!(value == -179968), !(value == -100000))
   })
-    #Visualization
+  # validate(
+  #   need(nrow(dataInput() > 0), 'The selected dates contain no data. Try selecting another set of dates.')
+  # )
+
+  # if (nrow(dataInput() > 0)){
+  #Visualization
   output$wq_plot <- renderPlotly({
     req(input$water_variable)
-    
+    # req(dataInput())  
+    # # print(nrow(dataInput())>0)
+    # validate(
+    #   need(nrow(dataInput()) == 0, "The selected dates contain no data. Try selecting another set of dates.")
+    # )
     #Check whether string starts with an opening bracket and closing bracket
     unit <- stringr::str_extract(string = input$water_variable,
                                  pattern = "(?<=\\().*(?=\\))")
@@ -339,7 +350,7 @@ wq_data_server <- function(input, output, session) {
       plotly::config(displayModeBar = FALSE) %>%
       plotly::config(showLink = FALSE)
   }) %>% bindCache(input$dateRange[1], input$dateRange[2], input$water_variable)
-  
+  # }
   data_gage_Input <- reactive({
     req(input$dateRange[1], input$dateRange[2])
     
